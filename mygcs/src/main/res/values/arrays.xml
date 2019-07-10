@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="city">
+        <item >Basic</item>
+        <item >Navi</item>
+        <item >Satellite</item>
+        <item >Hybrid</item>
+        <item >Terrain</item>
+
+    </string-array>
+</resources>
+
