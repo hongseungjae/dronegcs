@@ -444,6 +444,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
         LatLong vehiclePosition = droneGps.getPosition();
 
+
+
         double distanceFromHome = 0;
 
         if (droneGps.isValid()) {
