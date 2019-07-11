@@ -1,12 +1,15 @@
 package com.example.mygcs;
 
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.graphics.PointF;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.UiThread;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -24,13 +27,21 @@ import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.overlay.InfoWindow;
 import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.PolylineOverlay;
+import com.o3dr.android.client.ControlTower;
+import com.o3dr.android.client.Drone;
+import com.o3dr.android.client.interfaces.DroneListener;
+import com.o3dr.android.client.interfaces.LinkListener;
+import com.o3dr.android.client.interfaces.TowerListener;
+import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
+import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
+import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
 
 import java.util.ArrayList;
 
 public class MapFragmentActivity extends FragmentActivity
-        implements OnMapReadyCallback, Button.OnClickListener, NaverMap.OnMapLongClickListener, CompoundButton.OnCheckedChangeListener{
+        implements OnMapReadyCallback, Button.OnClickListener, NaverMap.OnMapLongClickListener, CompoundButton.OnCheckedChangeListener, DroneListener, TowerListener, LinkListener {
 
-
+    private static final String TAG = MainActivity.class.getSimpleName();
     NaverMap naverMapall;
     PolylineOverlay polyline;
     Context context;
@@ -48,16 +59,27 @@ public class MapFragmentActivity extends FragmentActivity
     private CheckBox cb4;
     private CheckBox cb5;
     private CheckBox cb6;
+
     Button layer;
+    Button connect;
     LinearLayout checkboxlinearLayout;
 
-
+    private Drone drone;
+    private ControlTower controlTower;
+    private final Handler handler = new Handler();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
+
+        this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+
+       // final Context context = getApplicationContext();
+        context = getApplicationContext();
+        this.controlTower = new ControlTower(context);
+        this.drone = new Drone(context);
 
         FragmentManager fm = getSupportFragmentManager();
         MapFragment mapFragment = (MapFragment)fm.findFragmentById(R.id.map);
@@ -68,10 +90,11 @@ public class MapFragmentActivity extends FragmentActivity
 
 
 
-        context = getApplicationContext();
+        //context = getApplicationContext();
         mapFragment.getMapAsync(this);
         Button button = (Button)findViewById(R.id.button);
          layer = (Button)findViewById(R.id.layer);
+        connect = (Button)findViewById(R.id.connect);
         checkboxlinearLayout = (LinearLayout)findViewById(R.id.checkboxlinearLayout);
 
         button.setOnClickListener(this);
@@ -94,10 +117,99 @@ public class MapFragmentActivity extends FragmentActivity
         cb6.setOnCheckedChangeListener(this);
 
 
+    }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        this.controlTower.connect(this);
+    }
 
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (this.drone.isConnected()) {
+            this.drone.disconnect();
+            updateConnectedButton(false);
+        }
 
+        this.controlTower.unregisterDrone(this.drone);
+        this.controlTower.disconnect();
+    }
 
+    @Override
+    public void onDroneEvent(String event, Bundle extras) {
+        switch (event) {
+            case AttributeEvent.STATE_CONNECTED:
+                alertUser("Drone Connected");
+                updateConnectedButton(this.drone.isConnected());
+                //updateArmButton();
+                break;
+
+            case AttributeEvent.STATE_DISCONNECTED:
+                alertUser("Drone Disconnected");
+                updateConnectedButton(this.drone.isConnected());
+                //updateArmButton();
+                break;
+
+            default:
+                // Log.i("DRONE_EVENT", event); //Uncomment to see events from the drone
+                break;
+        }
+    }
+
+    protected void updateConnectedButton(Boolean isConnected) {
+        Button connectButton = (Button) findViewById(R.id.connect);
+        if (isConnected) {
+            connectButton.setText(getText(R.string.button_disconnect));
+        } else {
+            connectButton.setText(getText(R.string.button_connect));
+        }
+    }
+
+    public void onBtnConnectTap(View view) {
+        if (this.drone.isConnected()) {
+            this.drone.disconnect();
+        } else {
+            ConnectionParameter params = ConnectionParameter.newUdpConnection(null);
+            this.drone.connect(params);
+        }
+    }
+
+    @Override
+    public void onDroneServiceInterrupted(String errorMsg) {
+
+    }
+
+    @Override
+    public void onLinkStateUpdated(@NonNull LinkConnectionStatus connectionStatus) {
+        switch (connectionStatus.getStatusCode()) {
+            case LinkConnectionStatus.FAILED:
+                Bundle extras = connectionStatus.getExtras();
+                String msg = null;
+                if (extras != null) {
+                    msg = extras.getString(LinkConnectionStatus.EXTRA_ERROR_MSG);
+                }
+                alertUser("Connection Failed:" + msg);
+                break;
+        }
+    }
+
+    @Override
+    public void onTowerConnected() {
+        alertUser("DroneKit-Android Connected");
+        this.controlTower.registerDrone(this.drone, this.handler);
+        this.drone.registerDroneListener(this);
+    }
+
+    @Override
+    public void onTowerDisconnected() {
+        alertUser("DroneKit-Android Interrupted");
+    }
+
+    protected void alertUser(String message) {
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
+        Log.d(TAG, message);
     }
 
 
@@ -107,11 +219,6 @@ public class MapFragmentActivity extends FragmentActivity
 
         String result = ""; // 문자열 초기화는 빈문자열로 하자
 
-//        if(isChecked) tv.setText("체크했음");
-//        else tv.setText("체크안했슴");
-
-        // 혹은 3항연산자
-        //tx.setText(isChecked?"체크했슴":"체크안했뜸");
 
         if(cb1.isChecked()){
             naverMapall.setLayerGroupEnabled(NaverMap.LAYER_GROUP_BICYCLE, true);
@@ -190,6 +297,18 @@ public class MapFragmentActivity extends FragmentActivity
                 }else{
                     checkboxlinearLayout.setVisibility(View.VISIBLE);
                 }
+                break;
+
+       /*     case R.id.connect:
+
+                if (this.drone.isConnected()) {
+                    this.drone.disconnect();
+                } else {
+                    ConnectionParameter params = ConnectionParameter.newUdpConnection(null);
+                    this.drone.connect(params);
+                }
+
+                break;*/
         } // switch
 
     }   // onclick

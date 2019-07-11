@@ -13,7 +13,8 @@ import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
-
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import com.o3dr.android.client.R;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
 import com.o3dr.services.android.lib.drone.mission.item.complex.CameraDetail;
@@ -24,7 +25,7 @@ import org.droidplanner.services.android.impl.core.drone.DroneManager;
 import org.droidplanner.services.android.impl.core.survey.CameraInfo;
 import org.droidplanner.services.android.impl.utils.Utils;
 import org.droidplanner.services.android.impl.utils.file.IO.CameraInfoLoader;
-
+import android.os.Build;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +37,7 @@ import timber.log.Timber;
  */
 public class DroidPlannerService extends Service {
 
-        /**
+    /**
      * Status bar notification id
      */
     private static final int FOREGROUND_ID = 101;
@@ -217,21 +218,40 @@ public class DroidPlannerService extends Service {
 
     @SuppressLint("NewApi")
     private void updateForegroundNotification() {
-        final Context context = getApplicationContext();
+        createNotificationChannel();
+    }
 
-        //Put the service in the foreground
-        final NotificationCompat.Builder notifBuilder = new NotificationCompat.Builder(context)
-                .setContentTitle("DroneKit-Android")
-                .setPriority(NotificationCompat.PRIORITY_MIN)
-                .setSmallIcon(R.drawable.ic_stat_notify);
-
-        final int connectedCount = droneApiStore.size();
-        if (connectedCount > 1) {
-            notifBuilder.setContentText(connectedCount + " connected apps");
+    private void createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = getString(R.string.channel_name);
+            String description = getString(R.string.channel_description);
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(getString(R.string.CHANNEL_ID), name, importance);
+            channel.setDescription(description);
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
         }
+        else {
+            final Context context = getApplicationContext();
 
-        final Notification notification = notifBuilder.build();
-        startForeground(FOREGROUND_ID, notification);
+            //Put the service in the foreground
+            final NotificationCompat.Builder notifBuilder = new NotificationCompat.Builder(context)
+                    .setContentTitle("DroneKit-Android")
+                    .setPriority(NotificationCompat.PRIORITY_MIN)
+                    .setSmallIcon(R.drawable.ic_stat_notify);
+
+            final int connectedCount = droneApiStore.size();
+            if (connectedCount > 1) {
+                notifBuilder.setContentText(connectedCount + " connected apps");
+            }
+
+            final Notification notification = notifBuilder.build();
+            startForeground(FOREGROUND_ID, notification);
+        }
     }
 
     @Override
