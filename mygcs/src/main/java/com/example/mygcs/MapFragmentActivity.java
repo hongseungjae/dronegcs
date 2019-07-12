@@ -27,6 +27,7 @@ import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.overlay.InfoWindow;
 import com.naver.maps.map.overlay.Marker;
+import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.overlay.PolylineOverlay;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
@@ -39,6 +40,7 @@ import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
 import com.o3dr.services.android.lib.drone.property.Altitude;
+import com.o3dr.services.android.lib.drone.property.Attitude;
 import com.o3dr.services.android.lib.drone.property.Gps;
 import com.o3dr.services.android.lib.drone.property.Home;
 import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
@@ -55,7 +57,7 @@ public class MapFragmentActivity extends FragmentActivity
     InfoWindow infoWindow;
     String test;
     String temp;
-    boolean check;
+    boolean mapgps;
     ArrayList<LatLng> latlngarr = new ArrayList<LatLng>();
     ArrayList<Marker> markerarr = new ArrayList<Marker>();
     ArrayList<InfoWindow> infowindowarr = new ArrayList<InfoWindow>();
@@ -74,6 +76,7 @@ public class MapFragmentActivity extends FragmentActivity
 
     Button layer;
     Button connect;
+    Button btnmapgps;
     LinearLayout checkboxlinearLayout;
 
     private Drone drone;
@@ -112,6 +115,8 @@ public class MapFragmentActivity extends FragmentActivity
          layer = (Button)findViewById(R.id.layer);
         connect = (Button)findViewById(R.id.connect);
         checkboxlinearLayout = (LinearLayout)findViewById(R.id.checkboxlinearLayout);
+        btnmapgps = (Button)findViewById(R.id.btnmapgps);
+
 
         button.setOnClickListener(this);
         layer.setOnClickListener(this);
@@ -135,6 +140,41 @@ public class MapFragmentActivity extends FragmentActivity
 
     }
 
+    protected void updatedronePosition(){
+
+
+        Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
+        LatLong vehiclePosition = droneGps.getPosition();
+
+
+        if (droneGps.isValid()) {
+
+
+            LatLng lat = new LatLng( vehiclePosition.getLatitude(),vehiclePosition.getLongitude());
+
+            latlngarr.add(lat);
+
+            polyline.setCoords(latlngarr);
+            polyline.setMap(naverMapall);
+
+
+
+            alertUser("Latitude : "+droneGps.getPosition().getLatitude() + ",  Longitude : "+droneGps.getPosition().getLongitude()+",  SatellitesCount : "+droneGps.getSatellitesCount());
+            Log.d("aabb","Latitude : "+droneGps.getPosition().getLatitude() + ",  Longitude : "+droneGps.getPosition().getLongitude()+",  SatellitesCount : "+droneGps.getSatellitesCount());
+
+            if(!mapgps) {
+                CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(lat, 20);
+                naverMapall.moveCamera(cameraUpdate);
+            }
+
+            premarker.setPosition(lat);
+            premarker.setMap(naverMapall);
+
+        }
+
+
+    }
+
     protected void updateDistanceFromHome() {
         TextView distanceTextView = (TextView) findViewById(R.id.distanceValueTextView);
         Altitude droneAltitude = this.drone.getAttribute(AttributeType.ALTITUDE);
@@ -142,23 +182,12 @@ public class MapFragmentActivity extends FragmentActivity
         Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
         LatLong vehiclePosition = droneGps.getPosition();
 
-        double distanceFromHome = 0;
-        //Log.d("aabb",vehiclePosition+"");
 
+
+        double distanceFromHome = 0;
 
         if (droneGps.isValid()) {
-
-
             LatLongAlt vehicle3DPosition = new LatLongAlt(vehiclePosition.getLatitude(), vehiclePosition.getLongitude(), vehicleAltitude);
-            alertUser(droneGps.toString());
-
-            CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(latlngarr.get(0), 16);
-             naverMapall.moveCamera(cameraUpdate);
-
-
-            premarker.setPosition(new LatLng( vehiclePosition.getLatitude(),vehiclePosition.getLongitude()));
-            premarker.setMap(naverMapall);
-
             Home droneHome = this.drone.getAttribute(AttributeType.HOME);
             distanceFromHome = distanceBetweenPoints(droneHome.getCoordinate(), vehicle3DPosition);
         } else {
@@ -168,9 +197,36 @@ public class MapFragmentActivity extends FragmentActivity
         distanceTextView.setText(String.format("%3.1f", distanceFromHome) + "m");
     }
 
+    protected void updateAttribute() {
+
+        Attitude droneAttribute = this.drone.getAttribute(AttributeType.ATTITUDE);
+        double y =droneAttribute.getYaw();
+        Log.d("aabbcc", "pitch : "+droneAttribute.getPitch() + " , roll : "+droneAttribute.getRoll() + " , yaw : "+droneAttribute.getYaw());
+        int yy = (int)y;
+        yy = yy +90;
+
+        if(y >= 0){
+
+
+            premarker.setAngle(yy);
+            Log.d("aabbcc", "deg : " + yy);
+
+        }{
+            yy = 360+yy;
+
+            premarker.setAngle(yy);
+            Log.d("aabbcc", "-deg : " + yy);
+
+        }
+
+    }
+
     protected void updateAltitude() {
         TextView altitudeTextView = (TextView) findViewById(R.id.altitudeValueTextView);
         Altitude droneAltitude = this.drone.getAttribute(AttributeType.ALTITUDE);
+
+
+
         altitudeTextView.setText(String.format("%3.1f", droneAltitude.getAltitude()) + "m");
     }
 
@@ -201,6 +257,10 @@ public class MapFragmentActivity extends FragmentActivity
                 //updateArmButton();
                 break;
 
+            case AttributeEvent.GPS_POSITION:
+                updatedronePosition();
+                break;
+
             case AttributeEvent.STATE_DISCONNECTED:
                 alertUser("Drone Disconnected");
                 updateConnectedButton(this.drone.isConnected());
@@ -209,6 +269,11 @@ public class MapFragmentActivity extends FragmentActivity
 
             case AttributeEvent.ALTITUDE_UPDATED:
                 updateAltitude();
+
+                break;
+
+            case AttributeEvent.ATTITUDE_UPDATED:
+                updateAttribute();
                 break;
 
             case AttributeEvent.HOME_UPDATED:
@@ -343,47 +408,38 @@ public class MapFragmentActivity extends FragmentActivity
     {
         switch (view.getId()) {
             case R.id.button:
-                if(!check) {
+            //    if(!check) {
                     Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
-                    Home h = this.drone.getAttribute(AttributeType.HOME);
 
-                    TextView distanceTextView = (TextView) findViewById(R.id.distanceValueTextView);
-                    Altitude droneAltitude = this.drone.getAttribute(AttributeType.ALTITUDE);
-                    double vehicleAltitude = droneAltitude.getAltitude();
 
                     LatLong vehiclePosition = droneGps.getPosition();
+
                     if (droneGps.isValid()) {
 
-                        CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(latlngarr.get(0), 16);
-                        naverMapall.moveCamera(cameraUpdate);
+                        LatLng lat = new LatLng( vehiclePosition.getLatitude(),vehiclePosition.getLongitude());
+                        latlngarr.add(lat);
+                        polyline.setCoords(latlngarr);
+                        polyline.setMap(naverMapall);
 
 
-                        premarker.setPosition(new LatLng( vehiclePosition.getLatitude(),vehiclePosition.getLongitude()));
+                        alertUser("Latitude : "+droneGps.getPosition().getLatitude() + ",  Longitude : "+droneGps.getPosition().getLongitude()+",  SatellitesCount : "+droneGps.getSatellitesCount());
+                        Log.d("aabb","Latitude : "+droneGps.getPosition().getLatitude() + ",  Longitude : "+droneGps.getPosition().getLongitude()+",  SatellitesCount : "+droneGps.getSatellitesCount());
+
+
+
+                     //   CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(lat, 16);
+                   //     naverMapall.moveCamera(cameraUpdate);
+
+
+                        premarker.setPosition(lat);
                         premarker.setMap(naverMapall);
 
-                        Log.d("aabb", droneGps.toString());
-                        Log.d("aabb", vehiclePosition.toString());
-                        alertUser(droneGps.toString());
+                        alertUser("Latitude : "+droneGps.getPosition().getLatitude() + ",  Longitude : "+droneGps.getPosition().getLongitude()+",  SatellitesCount : "+droneGps.getSatellitesCount());
+                        // alertUser(droneGps.toString());
+                    }else{
+                        alertUser("SatellitesCount : "+droneGps.getSatellitesCount());
                     }
 
-                    polyline.setMap(null);
-                    for(int i = 0 ; i < latlngarr.size(); i++){
-                        markerarr.get(i).setMap(null);
-                        infowindowarr.get(i).setMap(null);
-                    }
-
-                    check = true;
-                }
-                else{
-
-                    polyline.setMap(naverMapall);
-                    for(int i = 0 ; i < latlngarr.size(); i++){
-                        markerarr.get(i).setMap(naverMapall);
-                        infowindowarr.get(i).open(markerarr.get(i));
-                    }
-
-                    check = false;
-                }
 
                 break;
 
@@ -394,6 +450,13 @@ public class MapFragmentActivity extends FragmentActivity
                     checkboxlinearLayout.setVisibility(View.VISIBLE);
                 }
                 break;
+
+            case R.id.btnmapgps:
+                if(mapgps){
+                    mapgps = false;
+                }else{
+                    mapgps =true;
+                }
 
        /*     case R.id.connect:
 
@@ -416,16 +479,25 @@ public class MapFragmentActivity extends FragmentActivity
 
 
         // 위치 추가
-        latlngarr.add(new LatLng(35.945021, 126.682829));
-        latlngarr.add(new LatLng( 35.967652, 126.736895));
-        latlngarr.add(new LatLng( 35.970483, 126.954788));
-        latlngarr.add(new LatLng( 35.844426, 127.129364));
+    //    latlngarr.add(new LatLng(35.945021, 126.682829));
+    //    latlngarr.add(new LatLng( 35.967652, 126.736895));
+   //     latlngarr.add(new LatLng( 35.970483, 126.954788));
+    //    latlngarr.add(new LatLng( 35.844426, 127.129364));
 
 
-
-        CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(latlngarr.get(0), 9);
+        polyline = new PolylineOverlay();
+        CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(new LatLng(35.945021, 126.682829), 16);
 
         premarker = new Marker();
+
+        premarker.setWidth(110);
+        premarker.setHeight(110);
+
+
+
+        premarker.setPosition(new LatLng(35.945021, 126.682829));
+        premarker.setIcon(OverlayImage.fromResource(R.drawable.pix));
+        premarker.setMap(naverMap);
 
     /*    // 마커 추가
         for(int i = 0 ; i < latlngarr.size(); i++){
