@@ -6,22 +6,23 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <fragment android:layout_width="match_parent"
-        android:layout_height="match_parent"
+    <fragment
         android:id="@+id/map"
-        android:name="com.naver.maps.map.MapFragment" />
+        android:name="com.naver.maps.map.MapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:layout_editor_absoluteX="112dp"
+        tools:layout_editor_absoluteY="108dp" />
 
     <Button
         android:id="@+id/button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:text="Button"
+        android:text="gps연결"
         app:layout_constraintBottom_toBottomOf="@+id/map"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toEndOf="@+id/ARM" />
 
     <LinearLayout
         android:id="@+id/linearLayout"
@@ -38,28 +39,87 @@
 
         <TextView
             android:id="@+id/textView"
-            android:layout_width="100dp"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:text="지도유형 : "
-            android:textAlignment="center"
-            android:textSize="22sp" />
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="전압 : " />
 
-        <Spinner
-            android:id="@+id/spinner1"
-            android:layout_width="160dp"
-            android:layout_height="match_parent"
-            android:entries="@array/city" />
+        <TextView
+            android:id="@+id/volt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="volt" />
+
+        <TextView
+            android:id="@+id/textView3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="비행모드 : " />
 
         <Button
-            android:id="@+id/layer"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:id="@+id/mode"
+            android:layout_width="100dp"
+            android:layout_height="36dp"
             android:layout_weight="1"
-            android:text="레이어"
-            android:textSize="14sp" />
+            android:text="mode" />
 
+        <TextView
+            android:id="@+id/textView6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="고도 : " />
 
+        <TextView
+            android:id="@+id/alt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="alt" />
+
+        <TextView
+            android:id="@+id/textView8"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="속도 : " />
+
+        <TextView
+            android:id="@+id/speed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="speed" />
+
+        <TextView
+            android:id="@+id/TextView10"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="YAW : " />
+
+        <TextView
+            android:id="@+id/YAW"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="YAW" />
+
+        <TextView
+            android:id="@+id/textView12"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="위성 : " />
+
+        <TextView
+            android:id="@+id/sate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="sate" />
     </LinearLayout>
 
     <LinearLayout
@@ -118,42 +178,63 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         android:onClick="onBtnConnectTap"
         android:text="connect"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/button" />
 
-    <TextView
-        android:id="@+id/altitudeValueTextView"
+    <Button
+        android:id="@+id/layer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="TextView"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:layout_weight="1"
+        android:text="레이어"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toBottomOf="@+id/map"
+        app:layout_constraintEnd_toStartOf="@+id/clear" />
 
-    <TextView
-        android:id="@+id/distanceValueTextView"
+    <Spinner
+        android:id="@+id/spinner1"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="TextView"
-        app:layout_constraintStart_toEndOf="@+id/altitudeValueTextView"
-        app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
+        android:layout_height="42dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="@android:color/darker_gray"
+        android:entries="@array/city"
+        app:layout_constraintBottom_toBottomOf="@+id/map"
+        app:layout_constraintEnd_toStartOf="@+id/layer" />
 
     <Button
         android:id="@+id/btnmapgps"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         android:text="맵활성화"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/spinner1" />
+
+    <Button
+        android:id="@+id/clear"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="claer"
+        app:layout_constraintBottom_toBottomOf="@+id/map"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/ARM"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="ARM"
+        app:layout_constraintBottom_toBottomOf="@+id/map"
         app:layout_constraintStart_toStartOf="parent" />
 
 </android.support.constraint.ConstraintLayout>

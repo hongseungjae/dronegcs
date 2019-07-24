@@ -41,8 +41,10 @@ import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
 import com.o3dr.services.android.lib.drone.property.Altitude;
 import com.o3dr.services.android.lib.drone.property.Attitude;
+import com.o3dr.services.android.lib.drone.property.Battery;
 import com.o3dr.services.android.lib.drone.property.Gps;
 import com.o3dr.services.android.lib.drone.property.Home;
+import com.o3dr.services.android.lib.drone.property.Speed;
 import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
 
 import java.util.ArrayList;
@@ -74,6 +76,20 @@ public class MapFragmentActivity extends FragmentActivity
     TextView altitudeValueTextView;
     TextView distanceValueTextView;
 
+    TextView volt;
+    Button mode;
+    TextView alt;
+    TextView speed;
+    TextView YAW;
+    TextView sate;
+
+
+
+
+
+
+
+    Button clear;
     Button layer;
     Button connect;
     Button btnmapgps;
@@ -86,6 +102,8 @@ public class MapFragmentActivity extends FragmentActivity
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+
 
         setContentView(R.layout.activity_main);
 
@@ -108,19 +126,30 @@ public class MapFragmentActivity extends FragmentActivity
         //context = getApplicationContext();
         mapFragment.getMapAsync(this);
 
-        altitudeValueTextView = (TextView)findViewById(R.id.altitudeValueTextView);
-        distanceValueTextView = (TextView)findViewById(R.id.distanceValueTextView);
+     //  altitudeValueTextView = (TextView)findViewById(R.id.altitudeValueTextView);
+     //   distanceValueTextView = (TextView)findViewById(R.id.distanceValueTextView);
+
+        volt = (TextView)findViewById(R.id.volt);
+        mode = (Button)findViewById(R.id.mode);
+        alt = (TextView)findViewById(R.id.alt);
+        speed = (TextView)findViewById(R.id.speed);
+        YAW = (TextView)findViewById(R.id.YAW);
+        sate = (TextView)findViewById(R.id.sate);
+
+
 
         Button button = (Button)findViewById(R.id.button);
          layer = (Button)findViewById(R.id.layer);
         connect = (Button)findViewById(R.id.connect);
         checkboxlinearLayout = (LinearLayout)findViewById(R.id.checkboxlinearLayout);
         btnmapgps = (Button)findViewById(R.id.btnmapgps);
+        clear = (Button)findViewById(R.id.clear);
 
 
         button.setOnClickListener(this);
         layer.setOnClickListener(this);
-
+        btnmapgps.setOnClickListener(this);
+        clear.setOnClickListener(this);
 
 
         cb1 = (CheckBox)findViewById(R.id.checkBox1);
@@ -159,8 +188,9 @@ public class MapFragmentActivity extends FragmentActivity
 
 
 
-            alertUser("Latitude : "+droneGps.getPosition().getLatitude() + ",  Longitude : "+droneGps.getPosition().getLongitude()+",  SatellitesCount : "+droneGps.getSatellitesCount());
+            //alertUser("Latitude : "+droneGps.getPosition().getLatitude() + ",  Longitude : "+droneGps.getPosition().getLongitude()+",  SatellitesCount : "+droneGps.getSatellitesCount());
             Log.d("aabb","Latitude : "+droneGps.getPosition().getLatitude() + ",  Longitude : "+droneGps.getPosition().getLongitude()+",  SatellitesCount : "+droneGps.getSatellitesCount());
+
 
             if(!mapgps) {
                 CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(lat, 20);
@@ -169,6 +199,7 @@ public class MapFragmentActivity extends FragmentActivity
 
             premarker.setPosition(lat);
             premarker.setMap(naverMapall);
+            sate.setText(droneGps.getSatellitesCount()+"");
 
         }
 
@@ -176,7 +207,7 @@ public class MapFragmentActivity extends FragmentActivity
     }
 
     protected void updateDistanceFromHome() {
-        TextView distanceTextView = (TextView) findViewById(R.id.distanceValueTextView);
+    /*    TextView distanceTextView = (TextView) findViewById(R.id.distanceValueTextView);
         Altitude droneAltitude = this.drone.getAttribute(AttributeType.ALTITUDE);
         double vehicleAltitude = droneAltitude.getAltitude();
         Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
@@ -194,13 +225,14 @@ public class MapFragmentActivity extends FragmentActivity
             distanceFromHome = 0;
         }
 
-        distanceTextView.setText(String.format("%3.1f", distanceFromHome) + "m");
+        distanceTextView.setText(String.format("%3.1f", distanceFromHome) + "m");*/
     }
 
     protected void updateAttribute() {
 
         Attitude droneAttribute = this.drone.getAttribute(AttributeType.ATTITUDE);
         double y =droneAttribute.getYaw();
+        YAW.setText(String.format("%3.1f", y) + "deg");
         Log.d("aabbcc", "pitch : "+droneAttribute.getPitch() + " , roll : "+droneAttribute.getRoll() + " , yaw : "+droneAttribute.getYaw());
         int yy = (int)y;
         yy = yy +90;
@@ -222,12 +254,13 @@ public class MapFragmentActivity extends FragmentActivity
     }
 
     protected void updateAltitude() {
-        TextView altitudeTextView = (TextView) findViewById(R.id.altitudeValueTextView);
+        //TextView altitudeTextView = (TextView) findViewById(R.id.altitudeValueTextView);
         Altitude droneAltitude = this.drone.getAttribute(AttributeType.ALTITUDE);
 
 
 
-        altitudeTextView.setText(String.format("%3.1f", droneAltitude.getAltitude()) + "m");
+        alt.setText(String.format("%3.1f", droneAltitude.getAltitude()) + "m");
+       // altitudeTextView.setText(String.format("%3.1f", droneAltitude.getAltitude()) + "m");
     }
 
     @Override
@@ -280,11 +313,33 @@ public class MapFragmentActivity extends FragmentActivity
                 updateDistanceFromHome();
                 break;
 
+            case AttributeEvent.BATTERY_UPDATED:
+                updatebattery();
+                break;
+
+            case AttributeEvent.SPEED_UPDATED:
+                updateSpeed();
+                break;
+
             default:
                 // Log.i("DRONE_EVENT", event); //Uncomment to see events from the drone
                 break;
         }
     }
+
+    void updatebattery(){
+
+        Battery dronebattery=  this.drone.getAttribute(AttributeType.BATTERY);
+        volt.setText(dronebattery.getBatteryVoltage()+"V");
+
+    }
+
+    protected void updateSpeed() {
+
+        Speed droneSpeed = this.drone.getAttribute(AttributeType.SPEED);
+        speed.setText(String.format("%3.1f", droneSpeed.getGroundSpeed()) + "m/s");
+    }
+
 
     protected void updateConnectedButton(Boolean isConnected) {
         Button connectButton = (Button) findViewById(R.id.connect);
@@ -453,11 +508,24 @@ public class MapFragmentActivity extends FragmentActivity
 
             case R.id.btnmapgps:
                 if(mapgps){
+
                     mapgps = false;
+                    btnmapgps.setText("맵 활성화");
+                    alertUser("맵 활성화");
                 }else{
                     mapgps =true;
+                    alertUser("맵 비활성화");
+                    btnmapgps.setText("맵 비활성화");
                 }
+                break;
 
+            case R.id.clear:
+
+                latlngarr.clear();
+             //   polyline.setCoords(latlngarr);
+             //   polyline.setMap(naverMapall);
+
+                break;
        /*     case R.id.connect:
 
                 if (this.drone.isConnected()) {
