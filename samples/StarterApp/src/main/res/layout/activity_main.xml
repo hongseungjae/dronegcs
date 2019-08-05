@@ -205,10 +205,10 @@
                             android:id="@+id/btnArmTakeOff"
                             android:layout_width="120dp"
                             android:layout_height="wrap_content"
+                            android:layout_column="1"
+                            android:layout_below="@+id/connectionTypeLabel"
                             android:layout_alignParentEnd="true"
                             android:layout_alignParentRight="true"
-                            android:layout_below="@+id/connectionTypeLabel"
-                            android:layout_column="1"
                             android:onClick="onArmButtonTap"
                             android:visibility="invisible" />
                     </TableRow>

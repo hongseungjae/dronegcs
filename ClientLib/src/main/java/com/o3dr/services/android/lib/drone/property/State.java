@@ -12,6 +12,9 @@ import org.json.JSONObject;
  */
 public class State implements DroneAttribute {
 
+
+
+
     private static final String TAG = State.class.getSimpleName();
 
     public static final int INVALID_MAVLINK_VERSION = -1;

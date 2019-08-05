@@ -11,18 +11,32 @@
         android:name="com.naver.maps.map.MapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:layout_editor_absoluteX="112dp"
-        tools:layout_editor_absoluteY="108dp" />
+        tools:layout_editor_absoluteX="32dp"
+        tools:layout_editor_absoluteY="0dp" />
+
+    <Button
+        android:id="@+id/button7"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="@color/orange"
+        android:text="일반지도"
+        android:textColor="@android:color/background_light"
+        app:layout_constraintBottom_toBottomOf="@+id/map"
+        app:layout_constraintEnd_toStartOf="@+id/layer" />
 
     <Button
         android:id="@+id/button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
+        android:background="@color/orange"
         android:text="gps연결"
-        app:layout_constraintBottom_toBottomOf="@+id/map"
-        app:layout_constraintStart_toEndOf="@+id/ARM" />
+        android:textColor="@android:color/background_light"
+        app:layout_constraintBottom_toTopOf="@+id/layer"
+        app:layout_constraintEnd_toStartOf="@+id/connect" />
 
     <LinearLayout
         android:id="@+id/linearLayout"
@@ -31,7 +45,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:background="#67CC6C"
+        android:background="#7DE3F0"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -58,12 +72,10 @@
             android:layout_weight="1"
             android:text="비행모드 : " />
 
-        <Button
-            android:id="@+id/mode"
-            android:layout_width="100dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:text="mode" />
+        <Spinner
+            android:id="@+id/modeSelect"
+            android:layout_width="wrap_content"
+            android:layout_height="33dp" />
 
         <TextView
             android:id="@+id/textView6"
@@ -128,7 +140,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:background="#00BCD4"
+        android:background="#F7F2F2"
         android:orientation="vertical"
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
@@ -177,12 +189,14 @@
         android:id="@+id/connect"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
+        android:background="@color/orange"
         android:onClick="onBtnConnectTap"
         android:text="connect"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/button" />
+        android:textColor="@android:color/background_light"
+        app:layout_constraintBottom_toTopOf="@+id/clear"
+        app:layout_constraintEnd_toEndOf="@+id/map" />
 
     <Button
         android:id="@+id/layer"
@@ -191,21 +205,12 @@
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         android:layout_weight="1"
-        android:text="레이어"
+        android:background="@color/orange"
+        android:text="지적도"
+        android:textColor="@android:color/background_light"
         android:textSize="14sp"
         app:layout_constraintBottom_toBottomOf="@+id/map"
         app:layout_constraintEnd_toStartOf="@+id/clear" />
-
-    <Spinner
-        android:id="@+id/spinner1"
-        android:layout_width="wrap_content"
-        android:layout_height="42dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
-        android:background="@android:color/darker_gray"
-        android:entries="@array/city"
-        app:layout_constraintBottom_toBottomOf="@+id/map"
-        app:layout_constraintEnd_toStartOf="@+id/layer" />
 
     <Button
         android:id="@+id/btnmapgps"
@@ -213,9 +218,11 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
+        android:background="@color/orange"
         android:text="맵활성화"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/spinner1" />
+        android:textColor="@android:color/background_light"
+        app:layout_constraintBottom_toBottomOf="@+id/map"
+        app:layout_constraintEnd_toStartOf="@+id/button7" />
 
     <Button
         android:id="@+id/clear"
@@ -223,9 +230,22 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:text="claer"
+        android:background="@color/orange"
+        android:text="clear"
+        android:textColor="@android:color/background_light"
         app:layout_constraintBottom_toBottomOf="@+id/map"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recycler"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintStart_toStartOf="@+id/map"
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
+
+
 
     <Button
         android:id="@+id/ARM"
@@ -233,8 +253,47 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginBottom="8dp"
+        android:background="@color/orange"
+        android:onClick="onArmButtonTap"
         android:text="ARM"
+        android:textColor="@android:color/background_light"
         app:layout_constraintBottom_toBottomOf="@+id/map"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/linear3"
+        android:layout_width="wrap_content"
+        android:layout_height="156dp"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@+id/button7"
+        app:layout_constraintEnd_toEndOf="@+id/button7"
+        app:layout_constraintStart_toStartOf="@+id/button7">
+
+        <Button
+            android:id="@+id/button11"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/black"
+            android:text="위성지도"
+            android:textColor="@android:color/background_light" />
+
+        <Button
+            android:id="@+id/button12"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:background="@color/black"
+            android:text="지형도"
+            android:textColor="@android:color/background_light" />
+
+        <Button
+            android:id="@+id/button13"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/orange"
+            android:text="일반지도"
+            android:textColor="@android:color/background_light" />
+    </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>

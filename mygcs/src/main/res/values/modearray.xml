@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="mode">
+        <item >Loiter</item>
+        <item >AltHold</item>
+        <item >Auto</item>
+
+
+    </string-array>
+</resources>
+

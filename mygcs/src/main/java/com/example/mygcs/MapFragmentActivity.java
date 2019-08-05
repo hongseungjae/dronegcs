@@ -1,17 +1,24 @@
 package com.example.mygcs;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
 import android.graphics.PointF;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.UiThread;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.Adapter;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -31,6 +38,8 @@ import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.overlay.PolylineOverlay;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
+import com.o3dr.android.client.apis.ControlApi;
+import com.o3dr.android.client.apis.VehicleApi;
 import com.o3dr.android.client.interfaces.DroneListener;
 import com.o3dr.android.client.interfaces.LinkListener;
 import com.o3dr.android.client.interfaces.TowerListener;
@@ -43,11 +52,18 @@ import com.o3dr.services.android.lib.drone.property.Altitude;
 import com.o3dr.services.android.lib.drone.property.Attitude;
 import com.o3dr.services.android.lib.drone.property.Battery;
 import com.o3dr.services.android.lib.drone.property.Gps;
-import com.o3dr.services.android.lib.drone.property.Home;
 import com.o3dr.services.android.lib.drone.property.Speed;
+import com.o3dr.services.android.lib.drone.property.State;
+import com.o3dr.services.android.lib.drone.property.Type;
+import com.o3dr.services.android.lib.drone.property.VehicleMode;
 import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
+import com.o3dr.services.android.lib.model.AbstractCommandListener;
+import com.o3dr.services.android.lib.model.SimpleCommandListener;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 
 public class MapFragmentActivity extends FragmentActivity
         implements OnMapReadyCallback, Button.OnClickListener, NaverMap.OnMapLongClickListener, CompoundButton.OnCheckedChangeListener, DroneListener, TowerListener, LinkListener {
@@ -56,14 +72,9 @@ public class MapFragmentActivity extends FragmentActivity
     NaverMap naverMapall;
     PolylineOverlay polyline;
     Context context;
-    InfoWindow infoWindow;
-    String test;
-    String temp;
     boolean mapgps;
     ArrayList<LatLng> latlngarr = new ArrayList<LatLng>();
-    ArrayList<Marker> markerarr = new ArrayList<Marker>();
-    ArrayList<InfoWindow> infowindowarr = new ArrayList<InfoWindow>();
-    ArrayList<String> locationname= new ArrayList<String>();
+
     private CheckBox cb1;
     private CheckBox cb2;
     private CheckBox cb3;
@@ -71,33 +82,46 @@ public class MapFragmentActivity extends FragmentActivity
     private CheckBox cb5;
     private CheckBox cb6;
     Marker premarker;
-    Marker postmarker;
 
-    TextView altitudeValueTextView;
-    TextView distanceValueTextView;
+
+    LatLng lat2;
+    LatLong latl2;
 
     TextView volt;
-    Button mode;
+    //Spinner mode;
     TextView alt;
     TextView speed;
     TextView YAW;
     TextView sate;
 
 
+    int droneType = Type.TYPE_UNKNOWN;
 
 
 
-
-
+    Spinner modeSelector;
     Button clear;
     Button layer;
     Button connect;
     Button btnmapgps;
     LinearLayout checkboxlinearLayout;
-
+    LinearLayout linear3;
+    Button button11;
+    Button button12;
+    Button button13;
+    Button button7;
+    Marker ma;
     private Drone drone;
     private ControlTower controlTower;
     private final Handler handler = new Handler();
+
+    RecyclerView recyclerView;
+    RecyclerView.Adapter adapter;
+    ArrayList singModels = new ArrayList<>();
+    Queue q = new LinkedList();
+
+
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -106,13 +130,29 @@ public class MapFragmentActivity extends FragmentActivity
 
 
         setContentView(R.layout.activity_main);
+        recyclerView = (RecyclerView) findViewById(R.id.recycler);
+        //setData();
+        setRecyclerView();
+
 
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
-
+        ma = new Marker();
        // final Context context = getApplicationContext();
         context = getApplicationContext();
         this.controlTower = new ControlTower(context);
         this.drone = new Drone(context);
+        this.modeSelector = (Spinner) findViewById(R.id.modeSelect);
+        this.modeSelector.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                onFlightModeSelected(view);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing
+            }
+        });
 
         FragmentManager fm = getSupportFragmentManager();
         MapFragment mapFragment = (MapFragment)fm.findFragmentById(R.id.map);
@@ -127,15 +167,21 @@ public class MapFragmentActivity extends FragmentActivity
         mapFragment.getMapAsync(this);
 
      //  altitudeValueTextView = (TextView)findViewById(R.id.altitudeValueTextView);
-     //   distanceValueTextView = (TextView)findViewById(R.id.distanceValueTextView);
+        //   distanceValueTextView = (TextView)findViewById(R.id.distanceValueTextView);
 
         volt = (TextView)findViewById(R.id.volt);
-        mode = (Button)findViewById(R.id.mode);
+    //    mode = (Spinner)findViewById(R.id.modeSelect);
         alt = (TextView)findViewById(R.id.alt);
         speed = (TextView)findViewById(R.id.speed);
         YAW = (TextView)findViewById(R.id.YAW);
         sate = (TextView)findViewById(R.id.sate);
 
+
+         button11 = (Button)findViewById(R.id.button11);
+         button12 = (Button)findViewById(R.id.button12);
+         button13 = (Button)findViewById(R.id.button13);
+         button7 = (Button)findViewById(R.id.button7);
+        linear3 = (LinearLayout)findViewById(R.id.linear3);
 
 
         Button button = (Button)findViewById(R.id.button);
@@ -150,6 +196,13 @@ public class MapFragmentActivity extends FragmentActivity
         layer.setOnClickListener(this);
         btnmapgps.setOnClickListener(this);
         clear.setOnClickListener(this);
+        button11.setOnClickListener(this);
+        button12.setOnClickListener(this);
+        button13.setOnClickListener(this);
+        button7.setOnClickListener(this);
+
+
+      //  mode.setOnClickListener(this);
 
 
         cb1 = (CheckBox)findViewById(R.id.checkBox1);
@@ -168,6 +221,100 @@ public class MapFragmentActivity extends FragmentActivity
 
 
     }
+
+    void setRecyclerView(){
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
+        layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+        recyclerView.setLayoutManager(layoutManager);
+        adapter = new RecyclerAdapter(singModels);
+
+
+        recyclerView.setAdapter(adapter);
+    }
+    void setData(){
+
+      /*  int size = q.size();
+       singModels.clear();
+       for(int i = 0; i < size; i++){
+           String str = q.poll()+"";
+           singModels.add(new RecyclerItem(str));
+           q.add(str);
+       }
+
+
+
+        adapter.notifyDataSetChanged();*/
+
+
+    }
+
+    void setadd(String temp){
+        if(q.size() >= 4){
+            q.poll();
+            q.add(temp);
+        }else{
+            q.add(temp);
+        }
+        //setData();
+
+        int size = q.size();
+        singModels.clear();
+        for(int i = 0; i < size; i++){
+            String str = q.poll()+"";
+            singModels.add(new RecyclerItem(str));
+            q.add(str);
+        }
+        adapter.notifyDataSetChanged();
+
+
+    }
+
+
+
+
+
+    public void onFlightModeSelected(View view) {
+        VehicleMode vehicleMode = (VehicleMode) this.modeSelector.getSelectedItem();
+
+        VehicleApi.getApi(this.drone).setVehicleMode(vehicleMode, new AbstractCommandListener() {
+            @Override
+            public void onSuccess() {
+                alertUser("Vehicle mode change successful.");
+                setadd("Vehicle mode change successful.");
+
+            }
+
+            @Override
+            public void onError(int executionError) {
+                alertUser("Vehicle mode change failed: " + executionError);
+                setadd("Vehicle mode change failed: " + executionError);
+            }
+
+            @Override
+            public void onTimeout() {
+                alertUser("Vehicle mode change timed out.");
+                setadd("Vehicle mode change timed out.");
+
+            }
+        });
+    }
+
+    protected void updateVehicleModesForType(int droneType) {
+
+        List<VehicleMode> vehicleModes = VehicleMode.getVehicleModePerDroneType(droneType);
+        ArrayAdapter<VehicleMode> vehicleModeArrayAdapter = new ArrayAdapter<VehicleMode>(this, android.R.layout.simple_spinner_item, vehicleModes);
+        vehicleModeArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        this.modeSelector.setAdapter(vehicleModeArrayAdapter);
+    }
+
+    protected void updateVehicleMode() {
+        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+        VehicleMode vehicleMode = vehicleState.getVehicleMode();
+        ArrayAdapter arrayAdapter = (ArrayAdapter) this.modeSelector.getAdapter();
+        this.modeSelector.setSelection(arrayAdapter.getPosition(vehicleMode));
+    }
+
+
 
     protected void updatedronePosition(){
 
@@ -232,7 +379,7 @@ public class MapFragmentActivity extends FragmentActivity
 
         Attitude droneAttribute = this.drone.getAttribute(AttributeType.ATTITUDE);
         double y =droneAttribute.getYaw();
-        YAW.setText(String.format("%3.1f", y) + "deg");
+        //YAW.setText(String.format("%3.1f", y) + "deg");
         Log.d("aabbcc", "pitch : "+droneAttribute.getPitch() + " , roll : "+droneAttribute.getRoll() + " , yaw : "+droneAttribute.getYaw());
         int yy = (int)y;
         yy = yy +90;
@@ -242,12 +389,13 @@ public class MapFragmentActivity extends FragmentActivity
 
             premarker.setAngle(yy);
             Log.d("aabbcc", "deg : " + yy);
-
+            YAW.setText(yy + "deg");
         }{
             yy = 360+yy;
 
             premarker.setAngle(yy);
             Log.d("aabbcc", "-deg : " + yy);
+            YAW.setText(yy + "deg");
 
         }
 
@@ -267,6 +415,7 @@ public class MapFragmentActivity extends FragmentActivity
     public void onStart() {
         super.onStart();
         this.controlTower.connect(this);
+        updateVehicleModesForType(this.droneType);
     }
 
     @Override
@@ -286,27 +435,63 @@ public class MapFragmentActivity extends FragmentActivity
         switch (event) {
             case AttributeEvent.STATE_CONNECTED:
                 alertUser("Drone Connected");
+                setadd("Drone Connected");
                 updateConnectedButton(this.drone.isConnected());
-                //updateArmButton();
+                updateArmButton();
                 break;
+
+            case AttributeEvent.STATE_DISCONNECTED:
+                alertUser("Drone Disconnected");
+                setadd("Drone Disconnected");
+                updateConnectedButton(this.drone.isConnected());
+                updateArmButton();
+                break;
+
+            case AttributeEvent.TYPE_UPDATED:
+                Type newDroneType = this.drone.getAttribute(AttributeType.TYPE);
+                if (newDroneType.getDroneType() != this.droneType) {
+                    this.droneType = newDroneType.getDroneType();
+                    updateVehicleModesForType(this.droneType);
+                }
+                break;
+
+            case AttributeEvent.STATE_ARMING:
+                updateArmButton();
+                break;
+
+            case AttributeEvent.STATE_VEHICLE_MODE:
+                updateVehicleMode();
+                break;
+
+
 
             case AttributeEvent.GPS_POSITION:
                 updatedronePosition();
                 break;
 
-            case AttributeEvent.STATE_DISCONNECTED:
-                alertUser("Drone Disconnected");
-                updateConnectedButton(this.drone.isConnected());
-                //updateArmButton();
+            case AttributeEvent.ATTITUDE_UPDATED:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                updateAttribute();
                 break;
+
 
             case AttributeEvent.ALTITUDE_UPDATED:
                 updateAltitude();
 
-                break;
-
-            case AttributeEvent.ATTITUDE_UPDATED:
-                updateAttribute();
                 break;
 
             case AttributeEvent.HOME_UPDATED:
@@ -327,11 +512,130 @@ public class MapFragmentActivity extends FragmentActivity
         }
     }
 
+
+    public void onArmButtonTap(View view) {
+
+        Log.d("aabb","Aaazzx");
+
+        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+
+        if (vehicleState.isFlying()) {
+            // Land
+            VehicleApi.getApi(this.drone).setVehicleMode(VehicleMode.COPTER_LAND, new SimpleCommandListener() {
+                @Override
+                public void onError(int executionError) {
+                    alertUser("Unable to land the vehicle.");
+                    setadd("Unable to land the vehicle.");
+                }
+
+                @Override
+                public void onTimeout() {
+                    alertUser("Unable to land the vehicle.");
+                    setadd("Unable to land the vehicle.");
+                }
+            });
+        } else if (vehicleState.isArmed()) {
+            // Take off
+            ControlApi.getApi(this.drone).takeoff(3, new AbstractCommandListener() {
+
+                @Override
+                public void onSuccess() {
+                    alertUser("Taking off...");
+                    setadd("Taking off...");
+                }
+
+                @Override
+                public void onError(int i) {
+                    setadd("Unable to take off.");
+                    alertUser("Unable to take off.");
+                }
+
+                @Override
+                public void onTimeout() {
+                    setadd("Unable to take off.");
+                    alertUser("Unable to take off.");
+                }
+            });
+        } else if (!vehicleState.isConnected()) {
+            // Connect
+            alertUser("Connect to a drone first");
+            setadd("Connect to a drone first");
+        } else {
+            // Connected but not Armed
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("ARM");
+            builder.setMessage("진행하시겠습니까?");
+            builder.setPositiveButton("예",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            Toast.makeText(getApplicationContext(),"예를 선택했습니다.",Toast.LENGTH_LONG).show();
+                            VehicleApi.getApi(drone).arm(true, false, new SimpleCommandListener() {
+                                @Override
+                                public void onError(int executionError)
+                                {
+                                    alertUser("Unable to arm vehicle.");
+                                    setadd("Unable to arm vehicle.");
+                                }
+
+                                @Override
+                                public void onTimeout()
+                                {
+                                    alertUser("Arming operation timed out.");
+                                    setadd("Arming operation timed out.");
+                                }
+                            });
+
+
+                        }
+                    });
+            builder.setNegativeButton("아니오",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            Toast.makeText(getApplicationContext(),"아니오를 선택했습니다.",Toast.LENGTH_LONG).show();
+
+
+                        }
+                    });
+            builder.show();
+
+
+            //
+
+        }
+    }
+
+
+    protected void updateArmButton() {
+        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+        Button armButton = (Button) findViewById(R.id.ARM);
+
+     /*   if (!this.drone.isConnected()) {
+            armButton.setVisibility(View.INVISIBLE);
+        } else {
+            armButton.setVisibility(View.VISIBLE);
+        } */
+
+        if (vehicleState.isFlying()) {
+            // Land
+            armButton.setText("LAND");
+
+        } else if (vehicleState.isArmed()) {
+            // Take off
+            armButton.setText("TAKE OFF");
+        } else if (vehicleState.isConnected()) {
+            // Connected but not Armed
+            armButton.setText("ARM");
+        }
+
+    }
+
+
     void updatebattery(){
 
         Battery dronebattery=  this.drone.getAttribute(AttributeType.BATTERY);
-        volt.setText(dronebattery.getBatteryVoltage()+"V");
-
+        //volt.setText(dronebattery.getBatteryVoltage()+"V");
+        volt.setText(String.format("%3.1f", dronebattery.getBatteryVoltage()) + "V");
     }
 
     protected void updateSpeed() {
@@ -374,13 +678,14 @@ public class MapFragmentActivity extends FragmentActivity
                     msg = extras.getString(LinkConnectionStatus.EXTRA_ERROR_MSG);
                 }
                 alertUser("Connection Failed:" + msg);
+                setadd("Connection Failed:" + msg);
                 break;
-        }
-    }
+        }   }
 
     @Override
     public void onTowerConnected() {
         alertUser("DroneKit-Android Connected");
+        setadd("DroneKit-Android Connected");
         this.controlTower.registerDrone(this.drone, this.handler);
         this.drone.registerDroneListener(this);
     }
@@ -388,6 +693,7 @@ public class MapFragmentActivity extends FragmentActivity
     @Override
     public void onTowerDisconnected() {
         alertUser("DroneKit-Android Interrupted");
+        setadd("DroneKit-Android Interrupted");
     }
 
     protected void alertUser(String message) {
@@ -451,10 +757,123 @@ public class MapFragmentActivity extends FragmentActivity
 
     @Override
     public void onMapLongClick(@NonNull PointF pointF, @NonNull LatLng latLng) {
+
+
         PointF screenPt = naverMapall.getProjection().toScreenLocation(latLng);
+        LatLng latLng3 = naverMapall.getProjection().fromScreenLocation(screenPt);
 
-            Toast.makeText(context,screenPt.x + "  "+screenPt.y,Toast.LENGTH_LONG).show();
+        double x = latLng3.latitude;
+        double y = latLng3.longitude;
 
+        lat2 = new LatLng(x,y);
+        latl2 = new LatLong(x,y);
+        Toast.makeText(context,x+ "  "+y,Toast.LENGTH_LONG).show();
+
+
+
+        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+        VehicleMode vehicleMode = vehicleState.getVehicleMode();
+
+
+
+        String temp = vehicleMode+"";
+
+        if(temp.equals("Guided")){ // 가이드모드
+            Log.d("aabbccdd",vehicleMode+"");
+
+
+
+
+
+            ma.setPosition(lat2);
+            ma.setMap(naverMapall);
+
+            ControlApi.getApi(drone).goTo(latl2, true,new AbstractCommandListener() {
+
+                @Override
+                public void onSuccess() {
+                    alertUser("goto success");
+                    setadd("goto success");
+                }
+
+                @Override
+                public void onError(int i) {
+                    alertUser("goto error");
+                    setadd("goto error");
+                }
+
+                @Override
+                public void onTimeout() {
+                    alertUser("goto timeout");
+                    setadd("goto timeout");
+                }
+            });
+
+        }else{ //가이드모드 X
+
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("가이드 모드");
+            builder.setMessage("진행하시겠습니까?");
+            builder.setPositiveButton("예",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            Toast.makeText(getApplicationContext(),"예를 선택했습니다.",Toast.LENGTH_LONG).show();
+
+                            VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_GUIDED, new SimpleCommandListener() {
+                                @Override
+                                public void onError(int executionError) {
+                                    alertUser("Unable to Guided");
+                                    setadd("Unable to Guided");
+                                }
+
+                                @Override
+                                public void onTimeout() {
+                                    alertUser("Unable to Guided");
+                                    setadd("Unable to Guided");
+                                }
+                            });
+
+
+                            ma.setPosition(lat2);
+                            ma.setMap(naverMapall);
+
+                            ControlApi.getApi(drone).goTo(latl2, true,new AbstractCommandListener() {
+
+
+                                @Override
+                                public void onSuccess() {
+                                    alertUser("goto success");
+                                    setadd("goto success");
+                                }
+
+                                @Override
+                                public void onError(int i) {
+                                    alertUser("goto error");
+                                    setadd("goto error");
+                                }
+
+                                @Override
+                                public void onTimeout() {
+                                    alertUser("goto timeout");
+                                    setadd("goto timeout");
+                                }
+                            });
+
+
+
+                        }
+                    });
+            builder.setNegativeButton("아니오",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            Toast.makeText(getApplicationContext(),"아니오를 선택했습니다.",Toast.LENGTH_LONG).show();
+                        }
+                    });
+            builder.show();
+
+
+        }
 
     }
 
@@ -526,6 +945,52 @@ public class MapFragmentActivity extends FragmentActivity
              //   polyline.setMap(naverMapall);
 
                 break;
+
+            case R.id.button7:
+
+                if(linear3.getVisibility() == View.VISIBLE){
+                    linear3.setVisibility(View.GONE);
+                }else{
+                    linear3.setVisibility(View.VISIBLE);
+                }
+
+                break;
+
+            case R.id.button11:
+
+                button11.setBackgroundResource(R.color.orange);
+                button12.setBackgroundResource(R.color.black);
+                button13.setBackgroundResource(R.color.black);
+                button7.setText("위성지도");
+                naverMapall.setMapType(NaverMap.MapType.Satellite);
+                linear3.setVisibility(View.GONE);
+
+                break;
+
+            case R.id.button12:
+
+                button12.setBackgroundResource(R.color.orange);
+                button11.setBackgroundResource(R.color.black);
+                button13.setBackgroundResource(R.color.black);
+                button7.setText("지형도");
+                naverMapall.setMapType(NaverMap.MapType.Terrain);
+                linear3.setVisibility(View.GONE);
+
+
+                break;
+
+            case R.id.button13:
+
+                button13.setBackgroundResource(R.color.orange);
+                button12.setBackgroundResource(R.color.black);
+                button11.setBackgroundResource(R.color.black);
+                button7.setText("일반지도");
+                naverMapall.setMapType(NaverMap.MapType.Basic);
+                linear3.setVisibility(View.GONE);
+
+                break;
+
+
        /*     case R.id.connect:
 
                 if (this.drone.isConnected()) {
@@ -620,8 +1085,10 @@ public class MapFragmentActivity extends FragmentActivity
         naverMapall = naverMap;
 
         //스피너추가
-        Spinner s = (Spinner)findViewById(R.id.spinner1);
-        s.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+
+     //   Spinner s1 = (Spinner)findViewById(R.id.modeSelect);
+
+     /*   s.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view,
                                        int position, long id) {
@@ -645,7 +1112,9 @@ public class MapFragmentActivity extends FragmentActivity
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
-        });
+        });*/
+
+
 
     } // onMapReady
 

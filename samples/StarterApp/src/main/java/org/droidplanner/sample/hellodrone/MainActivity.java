@@ -308,8 +308,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             int selectedConnectionType = connectionSelector.getSelectedItemPosition();
 
             ConnectionParameter connectionParams = selectedConnectionType == ConnectionType.TYPE_USB
-                ? ConnectionParameter.newUsbConnection(null)
-                : ConnectionParameter.newUdpConnection(null);
+                    ? ConnectionParameter.newUsbConnection(null)
+                    : ConnectionParameter.newUdpConnection(null);
 
             this.drone.connect(connectionParams);
         }
@@ -628,7 +628,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                     public void onDecodingEnded() {
                         try {
                             mediaCodecManager.startDecoding(new Surface(videoView.getSurfaceTexture()),
-                                decoderListener);
+                                    decoderListener);
                         } catch (IOException | IllegalStateException e) {
                             Log.e(TAG, "Unable to create media codec.", e);
                             if (decoderListener != null)
