@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
+import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
@@ -65,6 +66,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
+import static com.naver.maps.geometry.GeoConstants.EARTH_RADIUS;
+import static java.lang.Math.PI;
+import static java.lang.Math.asin;
+import static java.lang.Math.atan2;
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+import static java.lang.Math.sqrt;
+import static java.lang.Math.toDegrees;
+import static java.lang.Math.toRadians;
+
 public class MapFragmentActivity extends FragmentActivity
         implements OnMapReadyCallback, Button.OnClickListener, NaverMap.OnMapLongClickListener, CompoundButton.OnCheckedChangeListener, DroneListener, TowerListener, LinkListener {
 
@@ -83,6 +94,7 @@ public class MapFragmentActivity extends FragmentActivity
     private CheckBox cb6;
     Marker premarker;
 
+    boolean onmap;
 
     LatLng lat2;
     LatLong latl2;
@@ -93,6 +105,10 @@ public class MapFragmentActivity extends FragmentActivity
     TextView speed;
     TextView YAW;
     TextView sate;
+    LatLng Alat;
+    LatLng Blat;
+    double ABangle;
+
 
 
     int droneType = Type.TYPE_UNKNOWN;
@@ -110,6 +126,11 @@ public class MapFragmentActivity extends FragmentActivity
     Button button12;
     Button button13;
     Button button7;
+    Button button2;
+    Button button3;
+    TextView textView4;
+    int takeoffalt;
+
     Marker ma;
     private Drone drone;
     private ControlTower controlTower;
@@ -133,7 +154,7 @@ public class MapFragmentActivity extends FragmentActivity
         recyclerView = (RecyclerView) findViewById(R.id.recycler);
         //setData();
         setRecyclerView();
-
+        takeoffalt = 3;
 
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
         ma = new Marker();
@@ -180,6 +201,10 @@ public class MapFragmentActivity extends FragmentActivity
          button11 = (Button)findViewById(R.id.button11);
          button12 = (Button)findViewById(R.id.button12);
          button13 = (Button)findViewById(R.id.button13);
+        button2 = (Button)findViewById(R.id.button2);
+        button3 = (Button)findViewById(R.id.button3);
+        textView4 = (TextView)findViewById(R.id.textView4);
+
          button7 = (Button)findViewById(R.id.button7);
         linear3 = (LinearLayout)findViewById(R.id.linear3);
 
@@ -200,6 +225,10 @@ public class MapFragmentActivity extends FragmentActivity
         button12.setOnClickListener(this);
         button13.setOnClickListener(this);
         button7.setOnClickListener(this);
+
+
+        button2.setOnClickListener(this);
+        button3.setOnClickListener(this);
 
 
       //  mode.setOnClickListener(this);
@@ -513,6 +542,10 @@ public class MapFragmentActivity extends FragmentActivity
     }
 
 
+
+
+
+
     public void onArmButtonTap(View view) {
 
         Log.d("aabb","Aaazzx");
@@ -536,7 +569,7 @@ public class MapFragmentActivity extends FragmentActivity
             });
         } else if (vehicleState.isArmed()) {
             // Take off
-            ControlApi.getApi(this.drone).takeoff(3, new AbstractCommandListener() {
+            ControlApi.getApi(this.drone).takeoff(takeoffalt, new AbstractCommandListener() {
 
                 @Override
                 public void onSuccess() {
@@ -708,7 +741,7 @@ public class MapFragmentActivity extends FragmentActivity
         double dx = pointA.getLatitude() - pointB.getLatitude();
         double dy = pointA.getLongitude() - pointB.getLongitude();
         double dz = pointA.getAltitude() - pointB.getAltitude();
-        return Math.sqrt(dx * dx + dy * dy + dz * dz);
+        return sqrt(dx * dx + dy * dy + dz * dz);
     }
 
 
@@ -752,6 +785,151 @@ public class MapFragmentActivity extends FragmentActivity
 
     }
 
+    private static double distance(double lat1, double lon1, double lat2, double lon2, String unit) {
+
+        double theta = lon1 - lon2;
+        double dist = sin(deg2rad(lat1)) * sin(deg2rad(lat2)) + cos(deg2rad(lat1)) * cos(deg2rad(lat2)) * cos(deg2rad(theta));
+
+        dist = Math.acos(dist);
+        dist = rad2deg(dist);
+        dist = dist * 60 * 1.1515;
+
+
+        if (unit == "kilometer") {
+            dist = dist * 1.609344;
+        } else if(unit == "meter"){
+            dist = dist * 1609.344;
+        }
+
+        return (dist);
+    }
+
+
+      double bearing2(double lat1, double lon1, double lat2, double lon2){
+
+        double longDiff= lon2-lon1;
+        double y = sin(longDiff)* cos(lat2);
+        double x = cos(lat1)* sin(lat2)- sin(lat1)* cos(lat2)* cos(longDiff);
+
+        return ( toDegrees(atan2(y, x)) + 360 ) % 360;
+    }
+
+
+
+
+    // This function converts decimal degrees to radians
+    private static double deg2rad(double deg) {
+        return (deg * PI / 180.0);
+    }
+
+    // This function converts radians to decimal degrees
+    private static double rad2deg(double rad) {
+        return (rad * 180 / PI);
+    }
+
+
+    double bearing(double lat1, double lon1,double lat2,double lon2){
+
+// 현재 위치 : 위도나 경도는 지구 중심을 기반으로 하는 각도이기 때문에 라디안 각도로 변환한다.
+
+        double Cur_Lat_radian = lat1 * (3.141592 / 180);
+
+        double Cur_Lon_radian = lon1 * (3.141592 / 180);
+
+        // 목표 위치 : 위도나 경도는 지구 중심을 기반으로 하는 각도이기 때문에 라디안 각도로 변환한다.
+
+        double Dest_Lat_radian = lat2 * (3.141592 / 180);
+
+        double Dest_Lon_radian = lon2 * (3.141592 / 180);
+
+        // radian distance
+
+        double radian_distance = 0;
+
+        radian_distance = Math.acos(sin(Cur_Lat_radian) * sin(Dest_Lat_radian) + cos(Cur_Lat_radian) * cos(Dest_Lat_radian) * cos(Cur_Lon_radian - Dest_Lon_radian));
+
+        // 목적지 이동 방향을 구한다.(현재 좌표에서 다음 좌표로 이동하기 위해서는 방향을 설정해야 한다. 라디안값이다.
+
+        double radian_bearing = Math.acos((sin(Dest_Lat_radian) - sin(Cur_Lat_radian) * cos(radian_distance)) / (cos(Cur_Lat_radian) * sin(radian_distance)));        // acos의 인수로 주어지는 x는 360분법의 각도가 아닌 radian(호도)값이다.
+
+
+
+        double true_bearing = 0;
+
+        if (sin(Dest_Lon_radian - Cur_Lon_radian) < 0)
+
+        {
+
+            true_bearing = radian_bearing * (180 / 3.141592);
+
+            true_bearing = 360 - true_bearing;
+
+        }
+
+        else
+
+        {
+
+            true_bearing = radian_bearing * (180 / 3.141592);
+
+        }
+
+        return true_bearing;
+
+    }
+
+
+    public static LatLng computeOffset(LatLng from, double distance, double heading) {
+        distance /= EARTH_RADIUS;
+        heading = toRadians(heading);
+        // http://williams.best.vwh.net/avform.htm#LL
+        double fromLat = toRadians(from.latitude);
+        double fromLng = toRadians(from.longitude);
+        double cosDistance = cos(distance);
+        double sinDistance = sin(distance);
+        double sinFromLat = sin(fromLat);
+        double cosFromLat = cos(fromLat);
+        double sinLat = cosDistance * sinFromLat + sinDistance * cosFromLat * cos(heading);
+        double dLng = atan2(
+                sinDistance * cosFromLat * sin(heading),
+                cosDistance - sinFromLat * sinLat);
+        return new LatLng(toDegrees(asin(sinLat)), toDegrees(fromLng + dLng));
+    }
+
+    public static LatLng computeOffsetOrigin(LatLng to, double distance, double heading) {
+        heading = toRadians(heading);
+        distance /= EARTH_RADIUS;
+        // http://lists.maptools.org/pipermail/proj/2008-October/003939.html
+        double n1 = cos(distance);
+        double n2 = sin(distance) * cos(heading);
+        double n3 = sin(distance) * sin(heading);
+        double n4 = sin(toRadians(to.latitude));
+        // There are two solutions for b. b = n2 * n4 +/- sqrt(), one solution results
+        // in the latitude outside the [-90, 90] range. We first try one solution and
+        // back off to the other if we are outside that range.
+        double n12 = n1 * n1;
+        double discriminant = n2 * n2 * n12 + n12 * n12 - n12 * n4 * n4;
+        if (discriminant < 0) {
+            // No real solution which would make sense in LatLng-space.
+            return null;
+        }
+        double b = n2 * n4 + sqrt(discriminant);
+        b /= n1 * n1 + n2 * n2;
+        double a = (n4 - n2 * b) / n1;
+        double fromLatRadians = atan2(a, b);
+        if (fromLatRadians < -PI / 2 || fromLatRadians > PI / 2) {
+            b = n2 * n4 - sqrt(discriminant);
+            b /= n1 * n1 + n2 * n2;
+            fromLatRadians = atan2(a, b);
+        }
+        if (fromLatRadians < -PI / 2 || fromLatRadians > PI / 2) {
+            // No solution which would make sense in LatLng-space.
+            return null;
+        }
+        double fromLngRadians = toRadians(to.longitude) -
+                atan2(n3, n1 * cos(fromLatRadians) - n2 * sin(fromLatRadians));
+        return new LatLng(toDegrees(fromLatRadians), toDegrees(fromLngRadians));
+    }
 
 
 
@@ -762,6 +940,94 @@ public class MapFragmentActivity extends FragmentActivity
         PointF screenPt = naverMapall.getProjection().toScreenLocation(latLng);
         LatLng latLng3 = naverMapall.getProjection().fromScreenLocation(screenPt);
 
+        if(!onmap){
+             Alat = latLng3;
+            Marker ma3 = new Marker();
+            ma3.setIconTintColor(Color.RED);
+            ma3.setPosition(new LatLng(Alat.latitude,Alat.longitude));
+            ma3.setMap(naverMapall);
+
+        }else{
+
+            Marker ma2 = new Marker();
+            ma2.setIconTintColor(Color.BLUE);
+            Blat = latLng3;
+            ma2.setPosition(new LatLng(latLng3.latitude,latLng3.longitude));
+            ma2.setMap(naverMapall);
+
+
+            ArrayList Alatarr = new ArrayList();
+            ArrayList Blatarr = new ArrayList();
+            Alatarr.add(Alat);
+            Blatarr.add(Blat);
+
+            double angle = bearing(Alat.latitude,Alat.longitude,latLng3.latitude,latLng3.longitude);
+            Log.d("ccddee",angle +"  bearing");
+            double angletemp = angle;
+            angletemp  = angle + 90;
+           /* if(angletemp  >= 270 || angletemp <= 90){
+                angletemp  = angle + 90;
+            }else{
+                angletemp  = angle + 90;
+            }*/
+
+            LatLng latLng4 =  computeOffset(Alat,100,angletemp);  // A 기준
+            Marker ma4 = new Marker();
+            ma4.setPosition(new LatLng(latLng4.latitude, latLng4.longitude));
+            ma4.setMap(naverMapall);
+
+            for(int i = 10; i < 100; i = i + 10){
+                LatLng latLng10 =  computeOffset(Alat,i,angletemp);  // A 기준
+                Alatarr.add(latLng10);
+            /*    Marker ma10 = new Marker();
+                ma10.setPosition(new LatLng(latLng10.latitude, latLng10.longitude));
+                ma10.setMap(naverMapall);*/
+            }
+            Alatarr.add(latLng4);
+
+            LatLng latLng6 =  computeOffset(latLng3,100,angletemp); // B 기준
+            Marker ma5 = new Marker();
+            ma5.setPosition(new LatLng(latLng6.latitude, latLng6.longitude));
+            ma5.setMap(naverMapall);
+
+
+            for(int i = 10; i < 100; i = i + 10){
+                LatLng latLng10 =  computeOffset(latLng3,i,angletemp);  // A 기준
+                Blatarr.add(latLng10);
+                /*Marker ma10 = new Marker();
+                ma10.setPosition(new LatLng(latLng10.latitude, latLng10.longitude));
+                ma10.setMap(naverMapall);*/
+
+            }
+            Blatarr.add(latLng6);
+
+            ArrayList latall = new ArrayList();
+            latall.add(Alatarr.get(0));
+            //latall.add(Blatarr.get(0));
+
+            for(int i = 0 ; i < Alatarr.size()-1; i++){
+
+                if(i % 2 ==0) {
+                    latall.add(Blatarr.get(i));
+                    latall.add(Blatarr.get(i + 1));
+                }else{
+                    latall.add(Alatarr.get(i));
+                    latall.add(Alatarr.get(i + 1));
+                }
+
+            }
+
+            Log.d("aabbccdd",Blatarr.get(Alatarr.size()-1)+"");
+            latall.add(Blatarr.get(Alatarr.size()-1));
+
+            polyline = new PolylineOverlay();
+            polyline.setCoords(latall);
+            polyline.setMap(naverMapall);
+
+
+        }
+
+    /*    LatLng latLng5 = new LatLng(35.945021, 126.682829);
         double x = latLng3.latitude;
         double y = latLng3.longitude;
 
@@ -770,8 +1036,39 @@ public class MapFragmentActivity extends FragmentActivity
         Toast.makeText(context,x+ "  "+y,Toast.LENGTH_LONG).show();
 
 
+        Marker ma3 = new Marker();
+        ma3.setPosition(new LatLng(x, y));
+        ma3.setMap(naverMapall);
 
-        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+        double angle = bearing(latLng5.latitude,latLng5.longitude,x,y);
+        double angletemp = angle;
+        if(angletemp  < 90){
+            angletemp  = angle + 90;
+        }else{
+            angletemp  = angle - 90;
+        }
+
+
+        Log.d("ccddee",bearing(35.945021, 126.682829, x,y) +"  bearing");
+        Log.d("ccddee",angletemp+"  angle");
+
+       // LatLng latLng4 =  computeOffsetOrigin(latLng5,100,90);
+        LatLng latLng4 =  computeOffset(latLng5,100,angletemp);
+        Marker ma4 = new Marker();
+        ma4.setPosition(new LatLng(latLng4.latitude, latLng4.longitude));
+        ma4.setMap(naverMapall);
+
+        LatLng latLng6 =  computeOffset(latLng3,100,angletemp);
+        Marker ma5 = new Marker();
+        ma5.setPosition(new LatLng(latLng6.latitude, latLng6.longitude));
+        ma5.setMap(naverMapall);
+        */
+
+        onmap = true;
+
+
+
+        /*State vehicleState = this.drone.getAttribute(AttributeType.STATE);
         VehicleMode vehicleMode = vehicleState.getVehicleMode();
 
 
@@ -780,9 +1077,6 @@ public class MapFragmentActivity extends FragmentActivity
 
         if(temp.equals("Guided")){ // 가이드모드
             Log.d("aabbccdd",vehicleMode+"");
-
-
-
 
 
             ma.setPosition(lat2);
@@ -802,8 +1096,8 @@ public class MapFragmentActivity extends FragmentActivity
                     setadd("goto error");
                 }
 
-                @Override
-                public void onTimeout() {
+                    @Override
+                    public void onTimeout() {
                     alertUser("goto timeout");
                     setadd("goto timeout");
                 }
@@ -873,7 +1167,7 @@ public class MapFragmentActivity extends FragmentActivity
             builder.show();
 
 
-        }
+        }*/
 
     }
 
@@ -991,6 +1285,23 @@ public class MapFragmentActivity extends FragmentActivity
                 break;
 
 
+
+            case R.id.button2: //이륙고도 up
+
+                takeoffalt = takeoffalt + 1;
+                textView4.setText(takeoffalt + " m");
+
+                break;
+
+
+            case R.id.button3:  //이륙고도 down
+                takeoffalt = takeoffalt - 1;
+                textView4.setText(takeoffalt + " m");
+
+
+                break;
+
+
        /*     case R.id.connect:
 
                 if (this.drone.isConnected()) {
@@ -1019,18 +1330,19 @@ public class MapFragmentActivity extends FragmentActivity
 
 
         polyline = new PolylineOverlay();
-        CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(new LatLng(35.945021, 126.682829), 16);
+        CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(new LatLng(35.945021, 126.682829), 15);
 
         premarker = new Marker();
+        premarker.setAnchor(new PointF(1, 1));
 
-        premarker.setWidth(110);
-        premarker.setHeight(110);
-
-
+     //   premarker.setWidth(110);
+     //   premarker.setHeight(110);
 
         premarker.setPosition(new LatLng(35.945021, 126.682829));
-        premarker.setIcon(OverlayImage.fromResource(R.drawable.pix));
-        premarker.setMap(naverMap);
+        // premarker.setIcon(OverlayImage.fromResource(R.drawable.pix4));
+     //   premarker.setMap(naverMap);
+
+
 
     /*    // 마커 추가
         for(int i = 0 ; i < latlngarr.size(); i++){
