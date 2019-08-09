@@ -36,10 +36,12 @@ import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.overlay.InfoWindow;
 import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.OverlayImage;
+import com.naver.maps.map.overlay.PolygonOverlay;
 import com.naver.maps.map.overlay.PolylineOverlay;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.apis.ControlApi;
+import com.o3dr.android.client.apis.MissionApi;
 import com.o3dr.android.client.apis.VehicleApi;
 import com.o3dr.android.client.interfaces.DroneListener;
 import com.o3dr.android.client.interfaces.LinkListener;
@@ -49,6 +51,9 @@ import com.o3dr.services.android.lib.coordinate.LatLongAlt;
 import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
+import com.o3dr.services.android.lib.drone.mission.Mission;
+import com.o3dr.services.android.lib.drone.mission.item.command.DoJump;
+import com.o3dr.services.android.lib.drone.mission.item.spatial.Waypoint;
 import com.o3dr.services.android.lib.drone.property.Altitude;
 import com.o3dr.services.android.lib.drone.property.Attitude;
 import com.o3dr.services.android.lib.drone.property.Battery;
@@ -85,6 +90,7 @@ public class MapFragmentActivity extends FragmentActivity
     Context context;
     boolean mapgps;
     ArrayList<LatLng> latlngarr = new ArrayList<LatLng>();
+    ArrayList<LatLng> polgonarr = new ArrayList<LatLng>();
 
     private CheckBox cb1;
     private CheckBox cb2;
@@ -130,7 +136,7 @@ public class MapFragmentActivity extends FragmentActivity
     Button button3;
     TextView textView4;
     int takeoffalt;
-
+    PolygonOverlay polygon;
     Marker ma;
     private Drone drone;
     private ControlTower controlTower;
@@ -484,6 +490,25 @@ public class MapFragmentActivity extends FragmentActivity
                 }
                 break;
 
+            case AttributeEvent.MISSION_DRONIE_CREATED:
+                setadd("MISSION_DRONIE_CREATED");
+                break;
+            case AttributeEvent.MISSION_ITEM_REACHED:
+                setadd("MISSION_ITEM_REACHED");
+                break;
+            case AttributeEvent.MISSION_ITEM_UPDATED:
+                setadd("MISSION_ITEM_UPDATED");
+                break;
+            case AttributeEvent.MISSION_RECEIVED:
+                setadd("MISSION_RECEIVED");
+                break;
+            case AttributeEvent.MISSION_SENT:
+                setadd("MISSION_SENT");
+                break;
+            case AttributeEvent.MISSION_UPDATED:
+                setadd("MISSION_UPDATED");
+                break;
+
             case AttributeEvent.STATE_ARMING:
                 updateArmButton();
                 break;
@@ -499,21 +524,6 @@ public class MapFragmentActivity extends FragmentActivity
                 break;
 
             case AttributeEvent.ATTITUDE_UPDATED:
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                 updateAttribute();
                 break;
 
@@ -946,15 +956,16 @@ public class MapFragmentActivity extends FragmentActivity
             ma3.setIconTintColor(Color.RED);
             ma3.setPosition(new LatLng(Alat.latitude,Alat.longitude));
             ma3.setMap(naverMapall);
-
+            polgonarr.add(Alat);
         }else{
+
 
             Marker ma2 = new Marker();
             ma2.setIconTintColor(Color.BLUE);
             Blat = latLng3;
             ma2.setPosition(new LatLng(latLng3.latitude,latLng3.longitude));
             ma2.setMap(naverMapall);
-
+            polgonarr.add(Blat);
 
             ArrayList Alatarr = new ArrayList();
             ArrayList Blatarr = new ArrayList();
@@ -976,13 +987,15 @@ public class MapFragmentActivity extends FragmentActivity
             ma4.setPosition(new LatLng(latLng4.latitude, latLng4.longitude));
             ma4.setMap(naverMapall);
 
-            for(int i = 10; i < 100; i = i + 10){
+            for(int i = 10; i < 100; i = i + 10) {
+
                 LatLng latLng10 =  computeOffset(Alat,i,angletemp);  // A 기준
                 Alatarr.add(latLng10);
             /*    Marker ma10 = new Marker();
                 ma10.setPosition(new LatLng(latLng10.latitude, latLng10.longitude));
                 ma10.setMap(naverMapall);*/
             }
+
             Alatarr.add(latLng4);
 
             LatLng latLng6 =  computeOffset(latLng3,100,angletemp); // B 기준
@@ -990,6 +1003,9 @@ public class MapFragmentActivity extends FragmentActivity
             ma5.setPosition(new LatLng(latLng6.latitude, latLng6.longitude));
             ma5.setMap(naverMapall);
 
+            polgonarr.add(new LatLng(latLng6.latitude, latLng6.longitude));
+            polgonarr.add(new LatLng(latLng4.latitude, latLng4.longitude));
+            polgonarr.add(Alat);
 
             for(int i = 10; i < 100; i = i + 10){
                 LatLng latLng10 =  computeOffset(latLng3,i,angletemp);  // A 기준
@@ -1023,6 +1039,25 @@ public class MapFragmentActivity extends FragmentActivity
             polyline = new PolylineOverlay();
             polyline.setCoords(latall);
             polyline.setMap(naverMapall);
+
+
+            polygon = new PolygonOverlay();
+            polygon.setColor(Color.argb(30,0,0,0));
+            polygon.setCoords(polgonarr);
+            polygon.setMap(naverMapall);
+
+
+            Mission mission = this.drone.getAttribute(AttributeType.MISSION);
+            mission.clear();
+
+            Waypoint waypoint2=new Waypoint();
+
+            waypoint2.setCoordinate(new LatLongAlt( 35.945021, 126.682829,5));
+            waypoint2.setDelay(1);
+
+            mission.addMissionItem(waypoint2);
+            MissionApi.getApi(this.drone).setMission(mission,true);
+
 
 
         }
