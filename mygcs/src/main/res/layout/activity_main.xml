@@ -14,6 +14,28 @@
         tools:layout_editor_absoluteX="32dp"
         tools:layout_editor_absoluteY="0dp" />
 
+    <ImageView
+        android:id="@+id/centermarker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:layout_marginBottom="7dp"
+        android:src="@drawable/navermap_default_marker_icon_blue"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/crosshair"
+        app:layout_constraintEnd_toEndOf="@+id/map"
+        app:layout_constraintStart_toStartOf="@+id/map" />
+
+    <ImageView
+        android:id="@+id/crosshair"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+
+        app:layout_constraintBottom_toBottomOf="@+id/map"
+        app:layout_constraintEnd_toEndOf="@+id/map"
+        app:layout_constraintStart_toStartOf="@+id/map"
+        app:layout_constraintTop_toTopOf="@+id/map" />
+
     <Button
         android:id="@+id/button7"
         android:layout_width="wrap_content"

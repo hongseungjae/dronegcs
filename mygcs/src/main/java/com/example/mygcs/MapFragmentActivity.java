@@ -23,18 +23,22 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.naver.maps.geometry.LatLng;
+import com.naver.maps.map.CameraAnimation;
+import com.naver.maps.map.CameraPosition;
 import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.MapFragment;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.overlay.InfoWindow;
 import com.naver.maps.map.overlay.Marker;
+import com.naver.maps.map.overlay.Overlay;
 import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.overlay.PolygonOverlay;
 import com.naver.maps.map.overlay.PolylineOverlay;
@@ -67,9 +71,13 @@ import com.o3dr.services.android.lib.model.AbstractCommandListener;
 import com.o3dr.services.android.lib.model.SimpleCommandListener;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
+import java.util.TreeMap;
 
 import static com.naver.maps.geometry.GeoConstants.EARTH_RADIUS;
 import static java.lang.Math.PI;
@@ -82,7 +90,7 @@ import static java.lang.Math.toDegrees;
 import static java.lang.Math.toRadians;
 
 public class MapFragmentActivity extends FragmentActivity
-        implements OnMapReadyCallback, Button.OnClickListener, NaverMap.OnMapLongClickListener, CompoundButton.OnCheckedChangeListener, DroneListener, TowerListener, LinkListener {
+        implements OnMapReadyCallback, Button.OnClickListener, NaverMap.OnMapLongClickListener, CompoundButton.OnCheckedChangeListener, DroneListener, TowerListener, LinkListener ,NaverMap.OnMapClickListener{
 
     private static final String TAG = MainActivity.class.getSimpleName();
     NaverMap naverMapall;
@@ -91,6 +99,15 @@ public class MapFragmentActivity extends FragmentActivity
     boolean mapgps;
     ArrayList<LatLng> latlngarr = new ArrayList<LatLng>();
     ArrayList<LatLng> polgonarr = new ArrayList<LatLng>();
+    ArrayList polinearr = new ArrayList();
+    ArrayList difpolinearr = new ArrayList();
+
+    ArrayList bearingarr = new ArrayList();
+    ArrayList markerarr = new ArrayList();
+    int markercount = 1;
+
+    HashMap map = new HashMap();
+
 
     private CheckBox cb1;
     private CheckBox cb2;
@@ -105,6 +122,7 @@ public class MapFragmentActivity extends FragmentActivity
     LatLng lat2;
     LatLong latl2;
 
+    ImageView centermarker;
     TextView volt;
     //Spinner mode;
     TextView alt;
@@ -114,8 +132,8 @@ public class MapFragmentActivity extends FragmentActivity
     LatLng Alat;
     LatLng Blat;
     double ABangle;
-
-
+    String overid;
+    boolean overboo;
 
     int droneType = Type.TYPE_UNKNOWN;
 
@@ -161,6 +179,7 @@ public class MapFragmentActivity extends FragmentActivity
         //setData();
         setRecyclerView();
         takeoffalt = 3;
+        centermarker = (ImageView)findViewById(R.id.centermarker);
 
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
         ma = new Marker();
@@ -214,7 +233,7 @@ public class MapFragmentActivity extends FragmentActivity
          button7 = (Button)findViewById(R.id.button7);
         linear3 = (LinearLayout)findViewById(R.id.linear3);
 
-
+        polyline = new PolylineOverlay();
         Button button = (Button)findViewById(R.id.button);
          layer = (Button)findViewById(R.id.layer);
         connect = (Button)findViewById(R.id.connect);
@@ -942,109 +961,199 @@ public class MapFragmentActivity extends FragmentActivity
     }
 
 
-
     @Override
-    public void onMapLongClick(@NonNull PointF pointF, @NonNull LatLng latLng) {
-
-
+    public void onMapClick(@NonNull PointF pointF, @NonNull LatLng latLng) {
         PointF screenPt = naverMapall.getProjection().toScreenLocation(latLng);
         LatLng latLng3 = naverMapall.getProjection().fromScreenLocation(screenPt);
+        Log.d("qqwwee","들어옴");
+        LatLng naverlat = latLng3;
+
 
         if(!onmap){
-             Alat = latLng3;
+            Alat = latLng3;
             Marker ma3 = new Marker();
             ma3.setIconTintColor(Color.RED);
             ma3.setPosition(new LatLng(Alat.latitude,Alat.longitude));
             ma3.setMap(naverMapall);
-            polgonarr.add(Alat);
-        }else{
+            ma3.setTag(markercount);
 
+            polinearr.add(Alat);
+            ma3.setOnClickListener(new Overlay.OnClickListener() {
+                @Override
+                public boolean onClick(@NonNull Overlay o) {
+                    centermarker.setVisibility(View.VISIBLE);
+                    //Toast.makeText(context, "오버레이 클릭됨", Toast.LENGTH_SHORT).show();
+                    Log.d("ddeeff",o.getTag()+ "오버레이 클릭됨");
+                    o.setMap(null);
+                    overid = o.getTag()+"";
+                    overboo = true;
+                    return true;
+                }
+            });
+            map.put(Double.parseDouble(markercount+""),Alat);
+            markercount++;
+
+
+
+        }else {
+
+            polinearr.clear();
+
+
+
+
+            map.put(Double.parseDouble(markercount + ""), naverlat);
 
             Marker ma2 = new Marker();
-            ma2.setIconTintColor(Color.BLUE);
-            Blat = latLng3;
-            ma2.setPosition(new LatLng(latLng3.latitude,latLng3.longitude));
+            ma2.setTag(markercount);
+            ma2.setPosition(naverlat);
             ma2.setMap(naverMapall);
-            polgonarr.add(Blat);
+            polinearr.add(naverlat);
 
-            ArrayList Alatarr = new ArrayList();
-            ArrayList Blatarr = new ArrayList();
-            Alatarr.add(Alat);
-            Blatarr.add(Blat);
+            ma2.setOnClickListener(new Overlay.OnClickListener() {
+                @Override
+                public boolean onClick(@NonNull Overlay o) {
+                    //Toast.makeText(context, o+"오버레이 클릭됨", Toast.LENGTH_SHORT).show();
+                    centermarker.setVisibility(View.VISIBLE);
+                    Log.d("ddeeff", o.getTag() + "오버레이 클릭됨 두번째");
+                    o.setMap(null);
+                    overid = o.getTag() + "";
+                    overboo = true;
+                    return true;
+                }
+            });
 
-            double angle = bearing(Alat.latitude,Alat.longitude,latLng3.latitude,latLng3.longitude);
-            Log.d("ccddee",angle +"  bearing");
-            double angletemp = angle;
-            angletemp  = angle + 90;
-           /* if(angletemp  >= 270 || angletemp <= 90){
-                angletemp  = angle + 90;
-            }else{
-                angletemp  = angle + 90;
-            }*/
 
-            LatLng latLng4 =  computeOffset(Alat,100,angletemp);  // A 기준
-            Marker ma4 = new Marker();
-            ma4.setPosition(new LatLng(latLng4.latitude, latLng4.longitude));
-            ma4.setMap(naverMapall);
+            markercount++;
 
-            for(int i = 10; i < 100; i = i + 10) {
+            TreeMap<Double, LatLng> tm = new TreeMap(map);
+            Set keyset = map.keySet();
+            Iterator keyiterator = tm.keySet().iterator();
 
-                LatLng latLng10 =  computeOffset(Alat,i,angletemp);  // A 기준
-                Alatarr.add(latLng10);
-            /*    Marker ma10 = new Marker();
-                ma10.setPosition(new LatLng(latLng10.latitude, latLng10.longitude));
-                ma10.setMap(naverMapall);*/
-            }
 
-            Alatarr.add(latLng4);
+            while (keyiterator.hasNext()) {
 
-            LatLng latLng6 =  computeOffset(latLng3,100,angletemp); // B 기준
-            Marker ma5 = new Marker();
-            ma5.setPosition(new LatLng(latLng6.latitude, latLng6.longitude));
-            ma5.setMap(naverMapall);
+                Double d = (Double) keyiterator.next();
+                Object v = tm.get(d);
+                LatLng lat2 = (LatLng) v;
+                if(d==0){
+                    Alat = lat2;
+                    polinearr.add(Alat);
 
-            polgonarr.add(new LatLng(latLng6.latitude, latLng6.longitude));
-            polgonarr.add(new LatLng(latLng4.latitude, latLng4.longitude));
-            polgonarr.add(Alat);
-
-            for(int i = 10; i < 100; i = i + 10){
-                LatLng latLng10 =  computeOffset(latLng3,i,angletemp);  // A 기준
-                Blatarr.add(latLng10);
-                /*Marker ma10 = new Marker();
-                ma10.setPosition(new LatLng(latLng10.latitude, latLng10.longitude));
-                ma10.setMap(naverMapall);*/
-
-            }
-            Blatarr.add(latLng6);
-
-            ArrayList latall = new ArrayList();
-            latall.add(Alatarr.get(0));
-            //latall.add(Blatarr.get(0));
-
-            for(int i = 0 ; i < Alatarr.size()-1; i++){
-
-                if(i % 2 ==0) {
-                    latall.add(Blatarr.get(i));
-                    latall.add(Blatarr.get(i + 1));
-                }else{
-                    latall.add(Alatarr.get(i));
-                    latall.add(Alatarr.get(i + 1));
+                }else {
+                    polinearr.add(lat2);
                 }
 
+
+                System.out.println("키 : " + d + " ---> 값 : " + lat2);
+
             }
 
-            Log.d("aabbccdd",Blatarr.get(Alatarr.size()-1)+"");
-            latall.add(Blatarr.get(Alatarr.size()-1));
 
-            polyline = new PolylineOverlay();
-            polyline.setCoords(latall);
+            polinearr.add(Alat);
+            polyline.setCoords(polinearr);
             polyline.setMap(naverMapall);
 
 
-            polygon = new PolygonOverlay();
-            polygon.setColor(Color.argb(30,0,0,0));
-            polygon.setCoords(polgonarr);
+            polygon.setColor(Color.argb(30, 0, 0, 0));
+            polygon.setCoords(polinearr);
             polygon.setMap(naverMapall);
+
+
+            if(markercount >= 5){   // 일단 마커가 4개 이상 찍힐 경우
+
+                // 마커 1과 4의 각도계산
+                // 마커 2와 3의 각도계산
+                // 2와 3 사이의 점 하나 찍고
+                // 1과 4사이의 점 하나 찍고
+                // 둘이 연결
+
+
+
+
+                Object obj1 = map.get(1.0);
+                LatLng lat1 = (LatLng) obj1;
+
+
+                Object obj4 = map.get(4.0);
+                LatLng lat4 = (LatLng) obj4;
+
+                double bear1_4 = bearing(lat1.latitude,lat1.longitude,lat4.latitude,lat4.longitude);
+                double distance1_4 = distance(lat1.latitude,lat1.longitude,lat4.latitude,lat4.longitude,"meter");
+
+
+                Object obj2 = map.get(2.0);
+                LatLng lat2 = (LatLng) obj2;
+
+                Object obj3 = map.get(3.0);
+                LatLng lat3 = (LatLng) obj3;
+                double bear2_3 = bearing(lat2.latitude,lat2.longitude,lat3.latitude,lat3.longitude);
+                double distance2_3 = distance(lat2.latitude,lat2.longitude,lat3.latitude,lat3.longitude,"meter");
+
+                ArrayList Alatarr = new ArrayList();
+                ArrayList Blatarr = new ArrayList();
+
+                Log.d("qwerqwer", distance1_4+"1_4");
+                Log.d("qwerqwer", distance2_3+"2_3");
+
+                ArrayList latall = new ArrayList();
+
+                LatLng latLng5 =  computeOffset(lat2,10,bear2_3);
+                LatLng latLng6 =  computeOffset(lat2,10,bear2_3);
+                latall.add(latLng5);
+                latall.add(latLng6);
+
+                for(int i = 10; i < distance2_3; i = i + 10) {
+
+                    LatLng latLng10 =  computeOffset(lat2,i,bear2_3);  // 2,3
+                    Alatarr.add(latLng10);
+
+                }
+
+                for(int i = 10; i < distance1_4; i = i + 10) {
+
+                    LatLng latLng10 =  computeOffset(lat1,i,bear1_4);  // 1,4
+                    Blatarr.add(latLng10);
+
+                }
+
+
+
+
+
+
+
+
+
+                for(int i = 0 ; i < Alatarr.size()-1; i++){
+
+                    if(i % 2 ==0) {
+                        latall.add(Alatarr.get(i));
+                        latall.add(Alatarr.get(i + 1));
+                    }else{
+                        latall.add(Blatarr.get(i));
+                        latall.add(Blatarr.get(i + 1));
+                    }
+
+                }
+
+                PolylineOverlay polyline = new PolylineOverlay();
+                polyline.setCoords(latall);
+                polyline.setMap(naverMapall);
+
+
+               // difpolinearr.add(newlat);
+            }
+
+
+
+
+
+        }
+
+        onmap = true;
+
+        /*
 
 
             Mission mission = this.drone.getAttribute(AttributeType.MISSION);
@@ -1059,10 +1168,26 @@ public class MapFragmentActivity extends FragmentActivity
             MissionApi.getApi(this.drone).setMission(mission,true);
 
 
+*/
+
+
 
         }
 
-    /*    LatLng latLng5 = new LatLng(35.945021, 126.682829);
+
+
+
+
+    @Override
+    public void onMapLongClick(@NonNull PointF pointF, @NonNull LatLng latLng) {
+
+        PointF screenPt = naverMapall.getProjection().toScreenLocation(latLng);
+        LatLng latLng3 = naverMapall.getProjection().fromScreenLocation(screenPt);
+
+      //  LatLng naverlat = latLng3;
+
+
+        LatLng latLng5 = new LatLng(35.945021, 126.682829);
         double x = latLng3.latitude;
         double y = latLng3.longitude;
 
@@ -1097,13 +1222,12 @@ public class MapFragmentActivity extends FragmentActivity
         Marker ma5 = new Marker();
         ma5.setPosition(new LatLng(latLng6.latitude, latLng6.longitude));
         ma5.setMap(naverMapall);
-        */
-
-        onmap = true;
 
 
 
-        /*State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+
+
+        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
         VehicleMode vehicleMode = vehicleState.getVehicleMode();
 
 
@@ -1202,7 +1326,7 @@ public class MapFragmentActivity extends FragmentActivity
             builder.show();
 
 
-        }*/
+        }
 
     }
 
@@ -1363,12 +1487,12 @@ public class MapFragmentActivity extends FragmentActivity
    //     latlngarr.add(new LatLng( 35.970483, 126.954788));
     //    latlngarr.add(new LatLng( 35.844426, 127.129364));
 
-
+        polygon = new PolygonOverlay();
         polyline = new PolylineOverlay();
         CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(new LatLng(35.945021, 126.682829), 15);
 
         premarker = new Marker();
-        premarker.setAnchor(new PointF(1, 1));
+     //   premarker.setAnchor(new PointF(1, 1));
 
      //   premarker.setWidth(110);
      //   premarker.setHeight(110);
@@ -1376,6 +1500,14 @@ public class MapFragmentActivity extends FragmentActivity
         premarker.setPosition(new LatLng(35.945021, 126.682829));
         // premarker.setIcon(OverlayImage.fromResource(R.drawable.pix4));
      //   premarker.setMap(naverMap);
+
+
+
+
+
+
+
+
 
 
 
@@ -1421,15 +1553,118 @@ public class MapFragmentActivity extends FragmentActivity
         }
 */
 
-        naverMap.moveCamera(cameraUpdate);
 
 
 
 
 
         naverMap.setOnMapLongClickListener(this);
+        naverMap.setOnMapClickListener(this);
 
         naverMapall = naverMap;
+
+        naverMap.moveCamera(cameraUpdate);
+
+        //naverMap.getLocationOverlay().setOnClickListener();
+
+
+        naverMap.addOnCameraChangeListener(new NaverMap.OnCameraChangeListener() {
+            @Override
+            public void onCameraChange(int reason, boolean animated) {
+                CameraPosition position = naverMapall.getCameraPosition();
+                //   cameraChange.setText(CameraEventActivity.this.getString(R.string.format_camera_position,
+                //          position.target.latitude, position.target.longitude, position.zoom, position.tilt, position.bearing));
+                Log.d("aabb",position.target.latitude + " " + position.target.longitude);
+            }
+        });
+
+
+        naverMap.addOnCameraIdleListener(new NaverMap.OnCameraIdleListener() {
+            @Override
+            public void onCameraIdle() {
+                //    Log.d("aabb",position.target.latitude + " " + position.target.longitude);
+                CameraPosition position = naverMapall.getCameraPosition();
+                Log.d("aabbcc",position.target.latitude + " " + position.target.longitude);
+                if(overboo){
+                    Log.d("ddeeff","overboo들어옴");
+                    polinearr.clear();
+
+
+                //    Object over =  map.get(Double.parseDouble(overid));
+              //      LatLng overlat = (LatLng) over;
+               //     Log.d("ddeeff",overlat.latitude + "overlat");
+
+                    map.put(Double.parseDouble(overid),new LatLng(position.target.latitude, position.target.longitude));
+
+                    TreeMap<Double,LatLng> tm = new TreeMap(map);
+                    Set keyset = map.keySet();
+                    Iterator keyiterator = tm.keySet().iterator();
+
+
+               //     TreeMap<Double,LatLng> tm2 = new TreeMap(map);
+               //     Set keyset2 = map.keySet();
+                //    Iterator keyiterator2 = tm2.keySet().iterator();
+
+
+
+
+                    while(keyiterator.hasNext()) {
+
+                        Double d = (Double)keyiterator.next();
+                        Object v = tm.get(d);
+                        LatLng lat2 = (LatLng) v;
+                        if(d==0){
+                            Alat = lat2;
+                            polinearr.add(Alat);
+
+                        }else {
+                            polinearr.add(lat2);
+                        }
+
+
+                        System.out.println("키 : "+d+" ---> 값 : "+lat2);
+
+                    }
+
+                    Marker ma2 = new Marker();
+                    ma2.setTag(overid);
+                    ma2.setPosition(new LatLng(position.target.latitude, position.target.longitude));
+                    ma2.setMap(naverMapall);
+                    ma2.setOnClickListener(new Overlay.OnClickListener() {
+                        @Override
+                        public boolean onClick(@NonNull Overlay o) {
+                            centermarker.setVisibility(View.VISIBLE);
+                            //Toast.makeText(context, o+"오버레이 클릭됨", Toast.LENGTH_SHORT).show();
+                            Log.d("ddeeff",o.getTag()+ "오버레이 클릭됨 두번째");
+                            o.setMap(null);
+                            overid = o.getTag()+"";
+                            overboo = true;
+                            return true;
+                        }
+                    });
+
+
+
+                    polinearr.add(Alat);
+                    polyline.setCoords(polinearr);
+                    polyline.setMap(naverMapall);
+
+
+                    polygon.setColor(Color.argb(30,0,0,0));
+                    polygon.setCoords(polinearr);
+                    polygon.setMap(naverMapall);
+
+                    overboo = false;
+
+                    centermarker.setVisibility(View.GONE);
+
+                }
+                //    cameraIdle.setText(CameraEventActivity.this.getString(R.string.format_camera_position,
+                //          position.target.latitude, position.target.longitude, position.zoom, position.tilt, position.bearing));
+            }
+        });
+
+
 
         //스피너추가
 
