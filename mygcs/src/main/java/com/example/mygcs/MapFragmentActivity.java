@@ -70,7 +70,16 @@ import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
 import com.o3dr.services.android.lib.model.AbstractCommandListener;
 import com.o3dr.services.android.lib.model.SimpleCommandListener;
 
+import org.droidplanner.services.android.impl.core.mission.MissionImpl;
+import org.droidplanner.services.android.impl.core.mission.MissionItemType;
+import org.droidplanner.services.android.impl.core.mission.survey.SurveyImpl;
+import org.droidplanner.services.android.impl.core.polygon.Polygon;
+import org.droidplanner.services.android.impl.core.survey.grid.CircumscribedGrid;
+import org.droidplanner.services.android.impl.core.survey.grid.Grid;
+import org.droidplanner.services.android.impl.core.survey.grid.GridBuilder;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -80,6 +89,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import static com.naver.maps.geometry.GeoConstants.EARTH_RADIUS;
+import static java.lang.Double.*;
 import static java.lang.Math.PI;
 import static java.lang.Math.asin;
 import static java.lang.Math.atan2;
@@ -95,16 +105,20 @@ public class MapFragmentActivity extends FragmentActivity
     private static final String TAG = MainActivity.class.getSimpleName();
     NaverMap naverMapall;
     PolylineOverlay polyline;
+    PolygonOverlay polygon;
     Context context;
     boolean mapgps;
     ArrayList<LatLng> latlngarr = new ArrayList<LatLng>();
     ArrayList<LatLng> polgonarr = new ArrayList<LatLng>();
-    ArrayList polinearr = new ArrayList();
+    List<LatLong> polinearr = new ArrayList();
     ArrayList difpolinearr = new ArrayList();
 
     ArrayList bearingarr = new ArrayList();
     ArrayList markerarr = new ArrayList();
-    int markercount = 1;
+    int markercount = 0;
+    double polimax;
+    double polimin;
+    int polilong;
 
     HashMap map = new HashMap();
 
@@ -121,7 +135,7 @@ public class MapFragmentActivity extends FragmentActivity
 
     LatLng lat2;
     LatLong latl2;
-
+    int k;
     ImageView centermarker;
     TextView volt;
     //Spinner mode;
@@ -134,6 +148,8 @@ public class MapFragmentActivity extends FragmentActivity
     double ABangle;
     String overid;
     boolean overboo;
+    double angle = 45;
+    double distance = 10;
 
     int droneType = Type.TYPE_UNKNOWN;
 
@@ -152,9 +168,11 @@ public class MapFragmentActivity extends FragmentActivity
     Button button7;
     Button button2;
     Button button3;
+    Button clear2;
     TextView textView4;
     int takeoffalt;
-    PolygonOverlay polygon;
+
+
     Marker ma;
     private Drone drone;
     private ControlTower controlTower;
@@ -180,6 +198,8 @@ public class MapFragmentActivity extends FragmentActivity
         setRecyclerView();
         takeoffalt = 3;
         centermarker = (ImageView)findViewById(R.id.centermarker);
+
+
 
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
         ma = new Marker();
@@ -222,7 +242,7 @@ public class MapFragmentActivity extends FragmentActivity
         YAW = (TextView)findViewById(R.id.YAW);
         sate = (TextView)findViewById(R.id.sate);
 
-
+        clear2= (Button)findViewById(R.id.clear2);
          button11 = (Button)findViewById(R.id.button11);
          button12 = (Button)findViewById(R.id.button12);
          button13 = (Button)findViewById(R.id.button13);
@@ -254,7 +274,7 @@ public class MapFragmentActivity extends FragmentActivity
 
         button2.setOnClickListener(this);
         button3.setOnClickListener(this);
-
+        clear2.setOnClickListener(this);
 
       //  mode.setOnClickListener(this);
 
@@ -512,12 +532,15 @@ public class MapFragmentActivity extends FragmentActivity
             case AttributeEvent.MISSION_DRONIE_CREATED:
                 setadd("MISSION_DRONIE_CREATED");
                 break;
+
             case AttributeEvent.MISSION_ITEM_REACHED:
                 setadd("MISSION_ITEM_REACHED");
                 break;
+
             case AttributeEvent.MISSION_ITEM_UPDATED:
                 setadd("MISSION_ITEM_UPDATED");
                 break;
+
             case AttributeEvent.MISSION_RECEIVED:
                 setadd("MISSION_RECEIVED");
                 break;
@@ -965,6 +988,8 @@ public class MapFragmentActivity extends FragmentActivity
     public void onMapClick(@NonNull PointF pointF, @NonNull LatLng latLng) {
         PointF screenPt = naverMapall.getProjection().toScreenLocation(latLng);
         LatLng latLng3 = naverMapall.getProjection().fromScreenLocation(screenPt);
+        LatLong latLng33 = new LatLong(latLng3.latitude,latLng3.longitude);
+
         Log.d("qqwwee","들어옴");
         LatLng naverlat = latLng3;
 
@@ -976,8 +1001,8 @@ public class MapFragmentActivity extends FragmentActivity
             ma3.setPosition(new LatLng(Alat.latitude,Alat.longitude));
             ma3.setMap(naverMapall);
             ma3.setTag(markercount);
+            polgonarr.add(latLng3);
 
-            polinearr.add(Alat);
             ma3.setOnClickListener(new Overlay.OnClickListener() {
                 @Override
                 public boolean onClick(@NonNull Overlay o) {
@@ -990,26 +1015,27 @@ public class MapFragmentActivity extends FragmentActivity
                     return true;
                 }
             });
-            map.put(Double.parseDouble(markercount+""),Alat);
+
+            polinearr.add(latLng33);
+
+            markerarr.add(ma3);
+            //map.put(parseDouble(markercount+""),Alat);
             markercount++;
+
 
 
 
         }else {
 
-            polinearr.clear();
 
-
-
-
-            map.put(Double.parseDouble(markercount + ""), naverlat);
 
             Marker ma2 = new Marker();
             ma2.setTag(markercount);
             ma2.setPosition(naverlat);
             ma2.setMap(naverMapall);
-            polinearr.add(naverlat);
-
+            polinearr.add(latLng33);
+            markerarr.add(ma2);
+            polgonarr.add(latLng3);
             ma2.setOnClickListener(new Overlay.OnClickListener() {
                 @Override
                 public boolean onClick(@NonNull Overlay o) {
@@ -1026,123 +1052,51 @@ public class MapFragmentActivity extends FragmentActivity
 
             markercount++;
 
-            TreeMap<Double, LatLng> tm = new TreeMap(map);
-            Set keyset = map.keySet();
-            Iterator keyiterator = tm.keySet().iterator();
+
+            if(markercount >=4) {   // 일단 마커가 3개 이상 찍힐 경우
 
 
-            while (keyiterator.hasNext()) {
 
-                Double d = (Double) keyiterator.next();
-                Object v = tm.get(d);
-                LatLng lat2 = (LatLng) v;
-                if(d==0){
-                    Alat = lat2;
-                    polinearr.add(Alat);
+                Grid grid;
+                Polygon polygon2 = new Polygon();
+                polygon2.addPoints(polinearr);
 
-                }else {
-                    polinearr.add(lat2);
+                grid = null;
+                GridBuilder gridBuilder = new GridBuilder(polygon2, angle,distance, new LatLong(0, 0));
+                try {
+                    polygon2.checkIfValid();
+                    grid = gridBuilder.generate(false);
+                    //grid.gridPoints.get()
+
+
+
+                }catch (Exception e){
+                    e.printStackTrace();
+                    Log.d("qqwwee",e.getMessage());
                 }
 
+                ArrayList arr2 = new ArrayList();
 
-                System.out.println("키 : " + d + " ---> 값 : " + lat2);
+                for( k = 0; k < grid.gridPoints.size(); k++){
+                    LatLong lat = grid.gridPoints.get(k);
 
-            }
+                    LatLng lat2 = new LatLng(lat.getLatitude(),lat.getLongitude());
 
+                    arr2.add(lat2);
 
-            polinearr.add(Alat);
-            polyline.setCoords(polinearr);
-            polyline.setMap(naverMapall);
-
-
-            polygon.setColor(Color.argb(30, 0, 0, 0));
-            polygon.setCoords(polinearr);
-            polygon.setMap(naverMapall);
-
-
-            if(markercount >= 5){   // 일단 마커가 4개 이상 찍힐 경우
-
-                // 마커 1과 4의 각도계산
-                // 마커 2와 3의 각도계산
-                // 2와 3 사이의 점 하나 찍고
-                // 1과 4사이의 점 하나 찍고
-                // 둘이 연결
-
-
-
-
-                Object obj1 = map.get(1.0);
-                LatLng lat1 = (LatLng) obj1;
-
-
-                Object obj4 = map.get(4.0);
-                LatLng lat4 = (LatLng) obj4;
-
-                double bear1_4 = bearing(lat1.latitude,lat1.longitude,lat4.latitude,lat4.longitude);
-                double distance1_4 = distance(lat1.latitude,lat1.longitude,lat4.latitude,lat4.longitude,"meter");
-
-
-                Object obj2 = map.get(2.0);
-                LatLng lat2 = (LatLng) obj2;
-
-                Object obj3 = map.get(3.0);
-                LatLng lat3 = (LatLng) obj3;
-                double bear2_3 = bearing(lat2.latitude,lat2.longitude,lat3.latitude,lat3.longitude);
-                double distance2_3 = distance(lat2.latitude,lat2.longitude,lat3.latitude,lat3.longitude,"meter");
-
-                ArrayList Alatarr = new ArrayList();
-                ArrayList Blatarr = new ArrayList();
-
-                Log.d("qwerqwer", distance1_4+"1_4");
-                Log.d("qwerqwer", distance2_3+"2_3");
-
-                ArrayList latall = new ArrayList();
-
-                LatLng latLng5 =  computeOffset(lat2,10,bear2_3);
-                LatLng latLng6 =  computeOffset(lat2,10,bear2_3);
-                latall.add(latLng5);
-                latall.add(latLng6);
-
-                for(int i = 10; i < distance2_3; i = i + 10) {
-
-                    LatLng latLng10 =  computeOffset(lat2,i,bear2_3);  // 2,3
-                    Alatarr.add(latLng10);
 
                 }
-
-                for(int i = 10; i < distance1_4; i = i + 10) {
-
-                    LatLng latLng10 =  computeOffset(lat1,i,bear1_4);  // 1,4
-                    Blatarr.add(latLng10);
-
-                }
+                k=0;
 
 
 
 
-
-
-
-
-
-                for(int i = 0 ; i < Alatarr.size()-1; i++){
-
-                    if(i % 2 ==0) {
-                        latall.add(Alatarr.get(i));
-                        latall.add(Alatarr.get(i + 1));
-                    }else{
-                        latall.add(Blatarr.get(i));
-                        latall.add(Blatarr.get(i + 1));
-                    }
-
-                }
-
-                PolylineOverlay polyline = new PolylineOverlay();
-                polyline.setCoords(latall);
+                polyline.setCoords(arr2);
                 polyline.setMap(naverMapall);
 
+                polygon.setCoords(polgonarr);
+                polygon.setMap(naverMapall);
 
-               // difpolinearr.add(newlat);
             }
 
 
@@ -1153,8 +1107,9 @@ public class MapFragmentActivity extends FragmentActivity
 
         onmap = true;
 
-        /*
+        }
 
+        /*
 
             Mission mission = this.drone.getAttribute(AttributeType.MISSION);
             mission.clear();
@@ -1167,13 +1122,7 @@ public class MapFragmentActivity extends FragmentActivity
             mission.addMissionItem(waypoint2);
             MissionApi.getApi(this.drone).setMission(mission,true);
 
-
 */
-
-
-
-        }
-
 
 
 
@@ -1187,7 +1136,7 @@ public class MapFragmentActivity extends FragmentActivity
       //  LatLng naverlat = latLng3;
 
 
-        LatLng latLng5 = new LatLng(35.945021, 126.682829);
+    /*    LatLng latLng5 = new LatLng(35.945021, 126.682829);
         double x = latLng3.latitude;
         double y = latLng3.longitude;
 
@@ -1221,7 +1170,7 @@ public class MapFragmentActivity extends FragmentActivity
         LatLng latLng6 =  computeOffset(latLng3,100,angletemp);
         Marker ma5 = new Marker();
         ma5.setPosition(new LatLng(latLng6.latitude, latLng6.longitude));
-        ma5.setMap(naverMapall);
+        ma5.setMap(naverMapall);*/
 
 
 
@@ -1461,6 +1410,27 @@ public class MapFragmentActivity extends FragmentActivity
                 break;
 
 
+            case R.id.clear2:  //이륙고도 down
+                onmap = false;
+
+
+                polygon.setMap(null);
+                polyline.setMap(null);
+                polgonarr.clear();
+                polinearr.clear();
+                markercount = 0;
+
+                for(int i = 0 ; i < markerarr.size(); i++){
+                    Marker a = (Marker) markerarr.get(i);
+                    a.setMap(null);
+
+                }
+
+
+                break;
+
+
+
        /*     case R.id.connect:
 
                 if (this.drone.isConnected()) {
@@ -1488,6 +1458,7 @@ public class MapFragmentActivity extends FragmentActivity
     //    latlngarr.add(new LatLng( 35.844426, 127.129364));
 
         polygon = new PolygonOverlay();
+        polygon.setColor(Color.argb(30,0,0,0));
         polyline = new PolylineOverlay();
         CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(new LatLng(35.945021, 126.682829), 15);
 
@@ -1502,56 +1473,42 @@ public class MapFragmentActivity extends FragmentActivity
      //   premarker.setMap(naverMap);
 
 
+        /*Marker marker = new Marker();
+        marker.setPosition(new LatLng(35.945021, 126.682829));
+
+        Marker marker2 = new Marker();
+        marker2.setPosition(new LatLng( 35.967652, 126.736895));
+
+        Marker marker3 = new Marker();
+        marker3.setPosition(new LatLng( 35.970483, 126.954788));
+
+        marker.setMap(naverMap);
+        marker2.setMap(naverMap);
+        marker3.setMap(naverMap);*/
 
 
 
 
+     //   Mission mission = this.drone.getAttribute(AttributeType.MISSION);
+
+        //MissionItemType type = MissionItemType.valueOf("Survey");
+        //type.getNewItem()
+        //MissionImpl missionImpl = new MissionImpl(this.drone);
+
+        //new SurveyImpl(type, arr);
+
+
+      //  Double dou = Double.parseDouble(3+"");
+     /*   try {
+            new CircumscribedGrid(arr, Double.parseDouble("90"), Double.parseDouble("3"));
+        }catch (Exception e){
+            e.printStackTrace();
+            Log.d("qqwwee",e.getMessage());
+
+        }*/
 
 
 
-
-
-    /*    // 마커 추가
-        for(int i = 0 ; i < latlngarr.size(); i++){
-            markerarr.add(new Marker());
-        }
-
-        //마커 표시
-        for(int i = 0 ; i < latlngarr.size(); i++){
-            Marker marker = markerarr.get(i);
-            marker.setPosition(latlngarr.get(i));
-            marker.setMap(naverMap);
-        }
-
-        // 폴리라인 생성
-        polyline = new PolylineOverlay();
-        polyline.setCoords(latlngarr);
-        polyline.setMap(naverMap);
-
-
-        //위치 이름 표시
-        locationname.add("군산대");
-        locationname.add("군산시청");
-        locationname.add("원광대");
-        locationname.add("전북대");
-
-        //설명 추가
-        for(int i =0; i < locationname.size(); i++){
-
-             temp = locationname.get(i);
-            infoWindow = new InfoWindow();
-            infoWindow.setAdapter(new InfoWindow.DefaultTextAdapter(context) {
-                @NonNull
-                @Override
-                public CharSequence getText(@NonNull InfoWindow infoWindow) {
-                    return temp;
-                }
-            });
-
-            infowindowarr.add(infoWindow);
-            infoWindow.open(markerarr.get(i));
-        }
-*/
 
 
 
@@ -1587,44 +1544,9 @@ public class MapFragmentActivity extends FragmentActivity
                 Log.d("aabbcc",position.target.latitude + " " + position.target.longitude);
                 if(overboo){
                     Log.d("ddeeff","overboo들어옴");
-                    polinearr.clear();
-
-
-                //    Object over =  map.get(Double.parseDouble(overid));
-              //      LatLng overlat = (LatLng) over;
-               //     Log.d("ddeeff",overlat.latitude + "overlat");
-
-                    map.put(Double.parseDouble(overid),new LatLng(position.target.latitude, position.target.longitude));
-
-                    TreeMap<Double,LatLng> tm = new TreeMap(map);
-                    Set keyset = map.keySet();
-                    Iterator keyiterator = tm.keySet().iterator();
-
-
-               //     TreeMap<Double,LatLng> tm2 = new TreeMap(map);
-               //     Set keyset2 = map.keySet();
-                //    Iterator keyiterator2 = tm2.keySet().iterator();
 
 
 
-
-                    while(keyiterator.hasNext()) {
-
-                        Double d = (Double)keyiterator.next();
-                        Object v = tm.get(d);
-                        LatLng lat2 = (LatLng) v;
-                        if(d==0){
-                            Alat = lat2;
-                            polinearr.add(Alat);
-
-                        }else {
-                            polinearr.add(lat2);
-                        }
-
-
-                        System.out.println("키 : "+d+" ---> 값 : "+lat2);
-
-                    }
 
                     Marker ma2 = new Marker();
                     ma2.setTag(overid);
@@ -1645,16 +1567,45 @@ public class MapFragmentActivity extends FragmentActivity
 
 
 
-                    polinearr.add(Alat);
-                    polyline.setCoords(polinearr);
+
+                    int a = Integer.parseInt(overid);
+                    markerarr.set(a,ma2);
+                    polinearr.set(a,new LatLong(position.target.latitude,position.target.longitude));
+                    polgonarr.set(a,new LatLng(position.target.latitude,position.target.longitude));
+
+                    Grid grid;
+                    Polygon polygon2 = new Polygon();
+                    polygon2.addPoints(polinearr);
+                    grid = null;
+                    GridBuilder gridBuilder = new GridBuilder(polygon2, angle,distance, new LatLong(0, 0));
+                    try {
+                        polygon2.checkIfValid();
+                        grid = gridBuilder.generate(false);
+                        //grid.gridPoints.get()
+
+
+
+                    }catch (Exception e){
+                        e.printStackTrace();
+                        Log.d("qqwwee",e.getMessage());
+                    }
+                    ArrayList arr2 = new ArrayList();
+                    for(int i = 0; i < grid.gridPoints.size(); i++){
+                        LatLong lat = grid.gridPoints.get(i);
+
+                        LatLng lat2 = new LatLng(lat.getLatitude(),lat.getLongitude());
+
+                        arr2.add(lat2);
+
+                    }
+
+
+                    polyline.setCoords(arr2);
                     polyline.setMap(naverMapall);
-
-
-                    polygon.setColor(Color.argb(30,0,0,0));
-                    polygon.setCoords(polinearr);
+                    polygon.setCoords(polgonarr);
                     polygon.setMap(naverMapall);
 
-                    overboo = false;
+                overboo = false;
 
                     centermarker.setVisibility(View.GONE);
 

@@ -27,11 +27,11 @@ public class CircumscribedGrid {
 		int lines = 0;
 		LatLong startPoint = gridLowerLeft;
 		while (lines * lineDist < extrapolatedDiag) {
-			LatLong endPoint = GeoTools.newCoordFromBearingAndDistance(startPoint, angle,
-					extrapolatedDiag);
+				LatLong endPoint = GeoTools.newCoordFromBearingAndDistance(startPoint, angle,
+						extrapolatedDiag);
 
-			LineLatLong line = new LineLatLong(startPoint, endPoint);
-			grid.add(line);
+				LineLatLong line = new LineLatLong(startPoint, endPoint);
+				grid.add(line);
 
 			startPoint = GeoTools.newCoordFromBearingAndDistance(startPoint, angle + 90, lineDist);
 			lines++;
