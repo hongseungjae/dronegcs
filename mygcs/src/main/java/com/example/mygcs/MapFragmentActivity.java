@@ -70,6 +70,7 @@ import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
 import com.o3dr.services.android.lib.model.AbstractCommandListener;
 import com.o3dr.services.android.lib.model.SimpleCommandListener;
 
+import org.droidplanner.services.android.impl.core.helpers.geoTools.LineLatLong;
 import org.droidplanner.services.android.impl.core.mission.MissionImpl;
 import org.droidplanner.services.android.impl.core.mission.MissionItemType;
 import org.droidplanner.services.android.impl.core.mission.survey.SurveyImpl;
@@ -77,7 +78,9 @@ import org.droidplanner.services.android.impl.core.polygon.Polygon;
 import org.droidplanner.services.android.impl.core.survey.grid.CircumscribedGrid;
 import org.droidplanner.services.android.impl.core.survey.grid.Grid;
 import org.droidplanner.services.android.impl.core.survey.grid.GridBuilder;
+import org.droidplanner.services.android.impl.core.survey.grid.Trimmer;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -115,11 +118,13 @@ public class MapFragmentActivity extends FragmentActivity
 
     ArrayList bearingarr = new ArrayList();
     ArrayList markerarr = new ArrayList();
+    ArrayList markerarrmin = new ArrayList();
+
     int markercount = 0;
     double polimax;
     double polimin;
     int polilong;
-
+double maxx = 0;
     HashMap map = new HashMap();
 
 
@@ -148,8 +153,9 @@ public class MapFragmentActivity extends FragmentActivity
     double ABangle;
     String overid;
     boolean overboo;
-    double angle = 45;
+    double angle = 90;
     double distance = 10;
+    boolean tempsort = false;
 
     int droneType = Type.TYPE_UNKNOWN;
 
@@ -171,7 +177,7 @@ public class MapFragmentActivity extends FragmentActivity
     Button clear2;
     TextView textView4;
     int takeoffalt;
-
+    ArrayList arr2 = new ArrayList();
 
     Marker ma;
     private Drone drone;
@@ -1029,6 +1035,7 @@ public class MapFragmentActivity extends FragmentActivity
 
 
 
+
             Marker ma2 = new Marker();
             ma2.setTag(markercount);
             ma2.setPosition(naverlat);
@@ -1053,9 +1060,44 @@ public class MapFragmentActivity extends FragmentActivity
             markercount++;
 
 
-            if(markercount >=4) {   // 일단 마커가 3개 이상 찍힐 경우
+            if(markercount >=3) {   // 일단 마커가 3개 이상 찍힐 경우
+                arr2.clear();
+                maxx=0;
+                for(int i = 0 ; i < polgonarr.size()-1; i++){
+
+                    LatLng lat111 = polgonarr.get(i);
+                    LatLng lat222 = polgonarr.get(i+1);
+
+                    double bear = bearing(lat111.latitude,lat111.longitude,lat222.latitude,lat222.longitude);
+                    double distance2 = distance(lat111.latitude,lat111.longitude,lat222.latitude,lat222.longitude,"meter");
+
+                    if(maxx <= distance2){
+                        maxx = distance2;
+                    angle =bear;
+                }
+
+                }
+
+                LatLng lat11 = polgonarr.get(0);
+                LatLng lat22 = polgonarr.get(polgonarr.size()-1);
+
+                double bear = bearing(lat11.latitude,lat11.longitude,lat22.latitude,lat22.longitude);
+                double distance2 = distance(lat11.latitude,lat11.longitude,lat22.latitude,lat22.longitude,"meter");
+
+                if(maxx <= distance2){
+                    maxx = distance2;
+                    angle =bear;
+                }
+
+        Log.d("qqwwee",angle+"");
 
 
+                for(int i = 0 ; i < markerarrmin.size(); i++){
+                    Marker a = (Marker) markerarrmin.get(i);
+                    a.setMap(null);
+                }
+
+                markerarrmin.clear();
 
                 Grid grid;
                 Polygon polygon2 = new Polygon();
@@ -1063,9 +1105,51 @@ public class MapFragmentActivity extends FragmentActivity
 
                 grid = null;
                 GridBuilder gridBuilder = new GridBuilder(polygon2, angle,distance, new LatLong(0, 0));
+
                 try {
                     polygon2.checkIfValid();
-                    grid = gridBuilder.generate(false);
+
+
+
+              /*      List<LatLong> polygonPoints = polygon2.getPoints();
+
+                    List<LineLatLong> circumscribedGrid = new CircumscribedGrid(polygonPoints, angle, Double.parseDouble(10+""))
+                            .getGrid();
+                    List<LineLatLong> trimedGrid = new Trimmer(circumscribedGrid, polygon2.getLines())
+                            .getTrimmedGrid();
+                    Log.d("qqwwee",trimedGrid.size()+"");
+                    for(int i = 0 ; i < trimedGrid.size(); i++){
+                        LatLong lat1 = trimedGrid.get(i).getStart();
+                        LatLong lat2 = trimedGrid.get(i).getEnd();
+                        Log.d("qqwwee",trimedGrid.get(i).toString()+"");
+                        LatLng lat3 = new LatLng(lat1.getLatitude(),lat1.getLongitude());
+                        LatLng lat4 = new LatLng(lat2.getLatitude(),lat2.getLongitude());
+
+                        ArrayList ar = new ArrayList();
+                        ar.add(lat3);
+                        ar.add(lat4);
+
+                        PolylineOverlay poy = new PolylineOverlay();
+                        poy.setCoords(ar);
+                        poy.setMap(naverMapall);
+
+                    }*/
+
+
+
+
+
+                    grid = gridBuilder.generate(tempsort);
+
+
+
+
+
+
+
+
+
+
                     //grid.gridPoints.get()
 
 
@@ -1075,7 +1159,7 @@ public class MapFragmentActivity extends FragmentActivity
                     Log.d("qqwwee",e.getMessage());
                 }
 
-                ArrayList arr2 = new ArrayList();
+
 
                 for( k = 0; k < grid.gridPoints.size(); k++){
                     LatLong lat = grid.gridPoints.get(k);
@@ -1084,8 +1168,16 @@ public class MapFragmentActivity extends FragmentActivity
 
                     arr2.add(lat2);
 
-
+                    Marker m = new Marker();
+                    m.setPosition(lat2);
+                    m.setWidth(10);
+                    m.setHeight(10);
+                    m.setCaptionText(k+"");
+                    m.setCaptionTextSize(8);
+                    m.setMap(naverMapall);
+                    markerarrmin.add(m);
                 }
+
                 k=0;
 
 
@@ -1418,10 +1510,16 @@ public class MapFragmentActivity extends FragmentActivity
                 polyline.setMap(null);
                 polgonarr.clear();
                 polinearr.clear();
+
                 markercount = 0;
 
                 for(int i = 0 ; i < markerarr.size(); i++){
                     Marker a = (Marker) markerarr.get(i);
+                    a.setMap(null);
+
+                }
+                for(int i = 0 ; i < markerarrmin.size(); i++){
+                    Marker a = (Marker) markerarrmin.get(i);
                     a.setMap(null);
 
                 }
@@ -1546,8 +1644,13 @@ public class MapFragmentActivity extends FragmentActivity
                     Log.d("ddeeff","overboo들어옴");
 
 
+                    for(int i = 0 ; i < markerarrmin.size(); i++){
+                        Marker a = (Marker) markerarrmin.get(i);
+                        a.setMap(null);
 
-
+                    }
+                    markerarrmin.clear();
+arr2.clear();
                     Marker ma2 = new Marker();
                     ma2.setTag(overid);
                     ma2.setPosition(new LatLng(position.target.latitude, position.target.longitude));
@@ -1573,6 +1676,36 @@ public class MapFragmentActivity extends FragmentActivity
                     polinearr.set(a,new LatLong(position.target.latitude,position.target.longitude));
                     polgonarr.set(a,new LatLng(position.target.latitude,position.target.longitude));
 
+
+                    maxx=0;
+                    for(int i = 0 ; i < polgonarr.size()-1; i++){
+
+                        LatLng lat111 = polgonarr.get(i);
+                        LatLng lat222 = polgonarr.get(i+1);
+
+                        double bear = bearing(lat111.latitude,lat111.longitude,lat222.latitude,lat222.longitude);
+                        double distance2 = distance(lat111.latitude,lat111.longitude,lat222.latitude,lat222.longitude,"meter");
+
+                        if(maxx <= distance2){
+                            maxx = distance2;
+                            angle =bear;
+                        }
+
+                    }
+
+                    LatLng lat11 = polgonarr.get(0);
+                    LatLng lat22 = polgonarr.get(polgonarr.size()-1);
+
+                    double bear = bearing(lat11.latitude,lat11.longitude,lat22.latitude,lat22.longitude);
+                    double distance2 = distance(lat11.latitude,lat11.longitude,lat22.latitude,lat22.longitude,"meter");
+
+                    if(maxx <= distance2){
+                        maxx = distance2;
+                        angle =bear;
+                    }
+
+                    Log.d("qqwwee",angle+"");
+
                     Grid grid;
                     Polygon polygon2 = new Polygon();
                     polygon2.addPoints(polinearr);
@@ -1580,7 +1713,7 @@ public class MapFragmentActivity extends FragmentActivity
                     GridBuilder gridBuilder = new GridBuilder(polygon2, angle,distance, new LatLong(0, 0));
                     try {
                         polygon2.checkIfValid();
-                        grid = gridBuilder.generate(false);
+                        grid = gridBuilder.generate(tempsort);
                         //grid.gridPoints.get()
 
 
@@ -1589,16 +1722,24 @@ public class MapFragmentActivity extends FragmentActivity
                         e.printStackTrace();
                         Log.d("qqwwee",e.getMessage());
                     }
-                    ArrayList arr2 = new ArrayList();
-                    for(int i = 0; i < grid.gridPoints.size(); i++){
-                        LatLong lat = grid.gridPoints.get(i);
+
+                    for( k = 0; k < grid.gridPoints.size(); k++){
+                        LatLong lat = grid.gridPoints.get(k);
 
                         LatLng lat2 = new LatLng(lat.getLatitude(),lat.getLongitude());
 
                         arr2.add(lat2);
 
+                        Marker m = new Marker();
+                        m.setPosition(lat2);
+                        m.setWidth(10);
+                        m.setHeight(10);
+                        m.setCaptionText(k+"");
+                         m.setCaptionTextSize(8);
+                        m.setMap(naverMapall);
+                        markerarrmin.add(m);
                     }
-
+                    k=0;
 
                     polyline.setCoords(arr2);
                     polyline.setMap(naverMapall);
