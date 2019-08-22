@@ -38,11 +38,11 @@
 
     <Button
         android:id="@+id/button7"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="67dp"
+        android:layout_height="35dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:background="@color/orange"
+        android:background="@drawable/button_background"
         android:text="일반지도"
         android:textColor="@android:color/background_light"
         app:layout_constraintBottom_toBottomOf="@+id/map"
@@ -50,15 +50,15 @@
 
     <Button
         android:id="@+id/button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="67dp"
+        android:layout_height="35dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:background="@color/orange"
+        android:background="@drawable/button_background"
         android:text="gps연결"
         android:textColor="@android:color/background_light"
-        app:layout_constraintBottom_toTopOf="@+id/layer"
-        app:layout_constraintEnd_toStartOf="@+id/connect" />
+        app:layout_constraintBottom_toTopOf="@+id/button7"
+        app:layout_constraintEnd_toStartOf="@+id/clear2" />
 
     <LinearLayout
         android:id="@+id/linearLayout"
@@ -67,7 +67,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:background="#7DE3F0"
+        android:background="#03A9F4"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -78,12 +78,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:textColor="@color/top"
             android:text="전압 : " />
 
         <TextView
             android:id="@+id/volt"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/top"
             android:layout_weight="1"
             android:text="volt" />
 
@@ -91,11 +93,13 @@
             android:id="@+id/textView3"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/top"
             android:layout_weight="1"
             android:text="비행모드 : " />
 
         <Spinner
             android:id="@+id/modeSelect"
+            android:textColor="@color/top"
             android:layout_width="wrap_content"
             android:layout_height="33dp" />
 
@@ -103,6 +107,7 @@
             android:id="@+id/textView6"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/top"
             android:layout_weight="1"
             android:text="고도 : " />
 
@@ -110,11 +115,14 @@
             android:id="@+id/alt"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+
+            android:textColor="@color/top"
             android:layout_weight="1"
             android:text="alt" />
 
         <TextView
             android:id="@+id/textView8"
+            android:textColor="@color/top"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -122,6 +130,7 @@
 
         <TextView
             android:id="@+id/speed"
+            android:textColor="@color/top"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -129,6 +138,7 @@
 
         <TextView
             android:id="@+id/TextView10"
+            android:textColor="@color/top"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -136,6 +146,7 @@
 
         <TextView
             android:id="@+id/YAW"
+            android:textColor="@color/top"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -143,6 +154,7 @@
 
         <TextView
             android:id="@+id/textView12"
+            android:textColor="@color/top"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -150,6 +162,7 @@
 
         <TextView
             android:id="@+id/sate"
+            android:textColor="@color/top"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -209,38 +222,38 @@
 
     <Button
         android:id="@+id/connect"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="67dp"
+        android:layout_height="35dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:background="@color/orange"
+        android:background="@drawable/button_background"
         android:onClick="onBtnConnectTap"
         android:text="connect"
         android:textColor="@android:color/background_light"
-        app:layout_constraintBottom_toTopOf="@+id/clear"
-        app:layout_constraintEnd_toEndOf="@+id/map" />
+        app:layout_constraintBottom_toBottomOf="@+id/map"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <Button
         android:id="@+id/layer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="67dp"
+        android:layout_height="35dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         android:layout_weight="1"
-        android:background="@color/orange"
+        android:background="@drawable/button_background"
         android:text="지적도"
         android:textColor="@android:color/background_light"
         android:textSize="14sp"
         app:layout_constraintBottom_toBottomOf="@+id/map"
-        app:layout_constraintEnd_toStartOf="@+id/clear" />
+        app:layout_constraintEnd_toStartOf="@+id/connect" />
 
     <Button
         android:id="@+id/btnmapgps"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="67dp"
+        android:layout_height="35dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:background="@color/orange"
+        android:background="@drawable/button_background"
         android:text="맵활성화"
         android:textColor="@android:color/background_light"
         app:layout_constraintBottom_toBottomOf="@+id/map"
@@ -248,15 +261,15 @@
 
     <Button
         android:id="@+id/clear"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="67dp"
+        android:layout_height="35dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:background="@color/orange"
+        android:background="@drawable/button_background"
         android:text="clear"
         android:textColor="@android:color/background_light"
-        app:layout_constraintBottom_toBottomOf="@+id/map"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintBottom_toTopOf="@+id/connect"
+        app:layout_constraintEnd_toEndOf="@+id/map" />
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recycler"
@@ -268,14 +281,13 @@
         app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
 
 
-
     <Button
         android:id="@+id/ARM"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="82dp"
+        android:layout_height="39dp"
         android:layout_marginStart="8dp"
         android:layout_marginBottom="8dp"
-        android:background="@color/orange"
+        android:background="#EE2828"
         android:onClick="onArmButtonTap"
         android:text="ARM"
         android:textColor="@android:color/background_light"
@@ -294,16 +306,16 @@
 
         <Button
             android:id="@+id/button11"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="67dp"
+            android:layout_height="35dp"
             android:background="@color/black"
             android:text="위성지도"
             android:textColor="@android:color/background_light" />
 
         <Button
             android:id="@+id/button12"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="67dp"
+            android:layout_height="35dp"
 
             android:background="@color/black"
             android:text="지형도"
@@ -311,8 +323,9 @@
 
         <Button
             android:id="@+id/button13"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+
+            android:layout_width="67dp"
+            android:layout_height="35dp"
             android:background="@color/orange"
             android:text="일반지도"
             android:textColor="@android:color/background_light" />
@@ -321,54 +334,104 @@
     <TextView
         android:id="@+id/textView2"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="35dp"
+
+
         android:layout_marginStart="8dp"
         android:layout_marginBottom="8dp"
-        android:text="이륙고도"
+        android:background="@drawable/button_background"
+        android:gravity="center"
+        android:text="이륙고도 : 3 m"
+        android:textColor="@android:color/background_light"
+        android:textSize="14sp"
         app:layout_constraintBottom_toTopOf="@+id/ARM"
         app:layout_constraintStart_toStartOf="@+id/map" />
 
-    <TextView
-        android:id="@+id/textView4"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="67dp"
+        android:layout_height="35dp"
         android:layout_marginStart="8dp"
         android:layout_marginBottom="8dp"
-        android:text="3 m"
+        android:background="@drawable/button_background"
+        android:text="up"
+        android:textColor="@android:color/background_light"
+        android:textSize="14sp"
         app:layout_constraintBottom_toTopOf="@+id/ARM"
         app:layout_constraintStart_toEndOf="@+id/textView2" />
 
     <Button
-        android:id="@+id/button2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginBottom="8dp"
-        android:text="up"
-        android:textSize="14sp"
-        app:layout_constraintBottom_toTopOf="@+id/ARM"
-        app:layout_constraintStart_toEndOf="@+id/textView4" />
-
-    <Button
         android:id="@+id/button3"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="67dp"
+        android:layout_height="35dp"
         android:layout_marginStart="8dp"
         android:layout_marginBottom="8dp"
+        android:background="@drawable/button_background"
         android:text="down"
+        android:textColor="@android:color/background_light"
         app:layout_constraintBottom_toTopOf="@+id/ARM"
         app:layout_constraintStart_toEndOf="@+id/button2" />
 
     <Button
         android:id="@+id/clear2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="67dp"
+        android:layout_height="35dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:background="@color/orange"
-        android:text="clear2"
+        android:background="@drawable/button_background"
+        android:text="간격 clear"
+
         android:textColor="@android:color/background_light"
-        app:layout_constraintBottom_toTopOf="@+id/connect"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintBottom_toTopOf="@+id/layer"
+        app:layout_constraintEnd_toStartOf="@+id/clear" />
+
+    <Button
+        android:id="@+id/button16"
+        android:layout_width="67dp"
+        android:layout_height="35dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/button_background"
+        android:text="간격모드"
+        android:textColor="@android:color/background_light"
+        app:layout_constraintBottom_toTopOf="@+id/button3"
+        app:layout_constraintStart_toEndOf="@+id/button15" />
+
+    <Button
+        android:id="@+id/button8"
+        android:layout_width="67dp"
+        android:layout_height="35dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/button_background"
+        android:text="미션 전달"
+        android:textColor="@android:color/background_light"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/map"
+        app:layout_constraintStart_toEndOf="@+id/ARM" />
+
+    <Button
+        android:id="@+id/button14"
+        android:layout_width="67dp"
+        android:layout_height="35dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/button_background2"
+        android:text="일반모드"
+        android:textColor="@android:color/background_light"
+        app:layout_constraintBottom_toTopOf="@+id/textView2"
+        app:layout_constraintStart_toStartOf="@+id/map" />
+
+    <Button
+        android:id="@+id/button15"
+        android:layout_width="67dp"
+        android:layout_height="35dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/button_background"
+        android:text="면적모드"
+        android:textColor="@android:color/background_light"
+        app:layout_constraintBottom_toTopOf="@+id/button2"
+        app:layout_constraintStart_toEndOf="@+id/button14" />
 
 </android.support.constraint.ConstraintLayout>
