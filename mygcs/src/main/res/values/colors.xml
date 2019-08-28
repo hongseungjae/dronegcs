@@ -6,5 +6,6 @@
     <color name="black">#000000</color>
     <color name="orange">#FF9800</color>
     <color name="top">#FFFFFF</color>
+    <color name="pollygoncolor">#4699DD</color>
 
 </resources>

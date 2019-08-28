@@ -89,6 +89,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
@@ -109,6 +110,7 @@ public class MapFragmentActivity extends FragmentActivity
 
     private static final String TAG = MainActivity.class.getSimpleName();
     NaverMap naverMapall;
+    PolylineOverlay polyline2;
     PolylineOverlay polyline;
     PolygonOverlay polygon;
     Context context;
@@ -128,7 +130,7 @@ public class MapFragmentActivity extends FragmentActivity
     int polilong;
 double maxx = 0;
     HashMap map = new HashMap();
-
+    protected double mRecentAltitude = 0;
     Grid grid;
     private CheckBox cb1;
     private CheckBox cb2;
@@ -137,9 +139,14 @@ double maxx = 0;
     private CheckBox cb5;
     private CheckBox cb6;
     Marker premarker;
-    int markersize = 80;
+    int markersize = 100;
+    int distancetemp = 100; // 면적
+    int distancetemp2 = 5;
 
+    double angle = 90;  //간격
+    double distance = 5;
 
+    double angletemp2 = 90;
     boolean onmap;
 
     LatLng latt2;
@@ -157,8 +164,7 @@ double maxx = 0;
     double ABangle;
     String overid;
     boolean overboo;
-    double angle = 90;
-    double distance = 10;
+
     boolean tempsort = false;
 
     int droneType = Type.TYPE_UNKNOWN;
@@ -274,7 +280,7 @@ double maxx = 0;
          button7 = (Button)findViewById(R.id.button7);
         linear3 = (LinearLayout)findViewById(R.id.linear3);
 
-        polyline = new PolylineOverlay();
+
         Button button = (Button)findViewById(R.id.button);
          layer = (Button)findViewById(R.id.layer);
         connect = (Button)findViewById(R.id.connect);
@@ -429,8 +435,8 @@ double maxx = 0;
 
             latlngarr.add(lat);
 
-            polyline.setCoords(latlngarr);
-            polyline.setMap(naverMapall);
+            polyline2.setCoords(latlngarr);
+            polyline2.setMap(naverMapall);
 
 
 
@@ -502,11 +508,18 @@ double maxx = 0;
 
     protected void updateAltitude() {
         //TextView altitudeTextView = (TextView) findViewById(R.id.altitudeValueTextView);
-        Altitude droneAltitude = this.drone.getAttribute(AttributeType.ALTITUDE);
+     //   Altitude droneAltitude = this.drone.getAttribute(AttributeType.ALTITUDE);
 
+        Altitude currentAltitude = this.drone.getAttribute(AttributeType.ALTITUDE);
+        mRecentAltitude = currentAltitude.getRelativeAltitude();
+        int newIntAltitude = (int) Math.round(mRecentAltitude);
+        mRecentAltitude = Double.parseDouble(String.format("%.1f", mRecentAltitude));
 
-
-        alt.setText(String.format("%3.1f", droneAltitude.getAltitude()) + "m");
+        //String stmRecentAltitude = mRecentAltitude+"";
+        //Log.d("qqwwee",mRecentAltitude+"");
+     //   Log.d("qqwwee",String.format("%.1f", stmRecentAltitude +" m"));
+        alt.setText(mRecentAltitude+" m");
+        //alt.setText(String.format("%3.1f", newIntAltitude + "m");
        // altitudeTextView.setText(String.format("%3.1f", droneAltitude.getAltitude()) + "m");
     }
 
@@ -571,10 +584,12 @@ double maxx = 0;
                 break;
             case AttributeEvent.MISSION_SENT:
                 button8.setText("미션 수행");
+
                 setadd("MISSION_SENT");
                 break;
             case AttributeEvent.MISSION_UPDATED:
-                setadd("MISSION_UPDATED");
+               // alertUser("MISSION_UPDATED");
+                //setadd("MISSION_UPDATED");
                 break;
 
             case AttributeEvent.STATE_ARMING:
@@ -1023,6 +1038,8 @@ double maxx = 0;
             if(!onmap){
                 Alat = latLng3;
                 Marker ma3 = new Marker();
+                ma3.setWidth(markersize);
+                ma3.setHeight(markersize);
                 ma3.setIconTintColor(Color.RED);
                 ma3.setPosition(new LatLng(Alat.latitude,Alat.longitude));
                 ma3.setMap(naverMapall);
@@ -1033,6 +1050,8 @@ double maxx = 0;
 
 
                 Marker ma2 = new Marker();
+                ma2.setWidth(markersize);
+                ma2.setHeight(markersize);
                 ma2.setIconTintColor(Color.BLUE);
                 Blat = latLng3;
                 ma2.setPosition(new LatLng(latLng3.latitude,latLng3.longitude));
@@ -1046,20 +1065,20 @@ double maxx = 0;
 
                 double angle = bearing(Alat.latitude,Alat.longitude,latLng3.latitude,latLng3.longitude);
                 Log.d("ccddee",angle +"  bearing");
-                double angletemp = angle;
-                angletemp  = angle + 90;
+                double angletemp;
+                angletemp  = angle + angletemp2;
            /* if(angletemp  >= 270 || angletemp <= 90){
                 angletemp  = angle + 90;
             }else{
                 angletemp  = angle + 90;
             }*/
 
-                LatLng latLng4 =  computeOffset(Alat,100,angletemp);  // A 기준
+                LatLng latLng4 =  computeOffset(Alat,distancetemp,angletemp);  // A 기준
                 Marker ma4 = new Marker();
                 ma4.setPosition(new LatLng(latLng4.latitude, latLng4.longitude));
                 ma4.setMap(naverMapall);
                 markerarr.add(ma4);
-                for(int i = 10; i < 100; i = i + 10) {
+                for(int i = distancetemp2; i < distancetemp; i = i + distancetemp2) {
 
                     LatLng latLng10 =  computeOffset(Alat,i,angletemp);  // A 기준
                     Alatarr.add(latLng10);
@@ -1070,7 +1089,7 @@ double maxx = 0;
 
                 Alatarr.add(latLng4);
 
-                LatLng latLng6 =  computeOffset(latLng3,100,angletemp); // B 기준
+                LatLng latLng6 =  computeOffset(latLng3,distancetemp,angletemp); // B 기준
                 Marker ma5 = new Marker();
                 ma5.setPosition(new LatLng(latLng6.latitude, latLng6.longitude));
                 ma5.setMap(naverMapall);
@@ -1079,7 +1098,7 @@ double maxx = 0;
                 polgonarr.add(new LatLng(latLng4.latitude, latLng4.longitude));
                 polgonarr.add(Alat);
 
-                for(int i = 10; i < 100; i = i + 10){
+                for(int i = distancetemp2; i < distancetemp; i = i + distancetemp2){
                     LatLng latLng10 =  computeOffset(latLng3,i,angletemp);  // A 기준
                     Blatarr.add(latLng10);
              /*   Marker ma10 = new Marker();
@@ -1124,13 +1143,21 @@ double maxx = 0;
 
                 Log.d("aabbccdd",Blatarr.get(Alatarr.size()-1)+"");
                 latall.add(Blatarr.get(Alatarr.size()-1));
+                Marker m = new Marker();
+                m.setPosition((LatLng)Blatarr.get(Alatarr.size()-1));
+                m.setWidth(10);
+                m.setHeight(10);
+                m.setCaptionText(latall.size()-1+"");
+                m.setCaptionTextSize(8);
+                m.setMap(naverMapall);
+                markerarr.add(m);
 
-                polyline = new PolylineOverlay();
+              //  polyline = new PolylineOverlay();
                 polyline.setCoords(latall);
                 polyline.setMap(naverMapall);
 
 
-                polygon = new PolygonOverlay();
+               // polygon = new PolygonOverlay();
                 polygon.setColor(Color.argb(30,0,0,0));
                 polygon.setCoords(polgonarr);
                 polygon.setMap(naverMapall);
@@ -1139,15 +1166,15 @@ double maxx = 0;
 
 
 
-        if(dronemode == 3) {
+        if(dronemode == 3) { //간격모드
             if (!onmap) {
                 Alat = latLng3;
                 Marker ma3 = new Marker();
                 ma3.setIconTintColor(Color.RED);
                 ma3.setPosition(new LatLng(Alat.latitude, Alat.longitude));
 
-             //   ma3.setWidth(markersize);
-            //    ma3.setHeight(markersize);
+                ma3.setWidth(markersize);
+                ma3.setHeight(markersize);
                 ma3.setMap(naverMapall);
                 ma3.setTag(markercount);
                 polgonarr.add(latLng3);
@@ -1179,6 +1206,8 @@ double maxx = 0;
                 ma2.setTag(markercount);
                 ma2.setPosition(naverlat);
                 ma2.setMap(naverMapall);
+                ma2.setWidth(markersize);
+                ma2.setHeight(markersize);
                 polinearr.add(latLng33);
                 markerarr.add(ma2);
                 polgonarr.add(latLng3);
@@ -1683,23 +1712,68 @@ double maxx = 0;
             case R.id.button8: // 미션 전달, 미션 수행, 미션 중지
 
                 String missionstate = button8.getText()+"";
+                Log.d("qqwwee",missionstate+"");
                 if(missionstate.equals("미션 전달")){
+                    Log.d("qqwwee","미션전달");
                          mission = this.drone.getAttribute(AttributeType.MISSION);
                 mission.clear();
 
+                String stalt = alt.getText()+"";
+                String alttarr[] = stalt.split(" ");
+
+                    double altt = Double.parseDouble(alttarr[0]);
+                    Log.d("qqwwee", altt+ " ");
+
+                    if(0 >= altt || altt <= 1){
+                        altt = takeoffalt;
+                    }
+
+                    alertUser(altt+"");
 
                 for (int i = 0; i < arr2.size(); i++) {
                     Waypoint waypoint2 = new Waypoint();
-                    LatLng lng = (LatLng)arr2.get(k);
+                    LatLng lng = (LatLng)arr2.get(i);
                     LatLong lat = new LatLong(lng.latitude,lng.longitude);
-                    waypoint2.setCoordinate(new LatLongAlt(lat, takeoffalt));
+
+                    waypoint2.setCoordinate(new LatLongAlt(lat, altt));
                     waypoint2.setDelay(1);
                     mission.addMissionItem(waypoint2);
                 }
+                    MissionApi.getApi(this.drone).setMission(mission, true);
 
                 }else if(missionstate.equals("미션 수행")) {
-                    MissionApi.getApi(this.drone).setMission(mission, true);
+                    VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_AUTO, new SimpleCommandListener() {
+                        @Override
+                        public void onError(int executionError) {
+                            alertUser("Unable to COPTER_AUTO");
+                            setadd("Unable to COPTER_AUTO");
+                        }
+
+                        @Override
+                        public void onTimeout() {
+                            alertUser("Unable to COPTER_AUTO");
+                            setadd("Unable to COPTER_AUTO");
+                        }
+                    });
+                //    MissionApi.getApi(this.drone).setMission(mission, true);
                     button8.setText("미션 중지");
+                }else if(missionstate.equals("미션 재시작")) {
+                    VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_AUTO, new SimpleCommandListener() {
+                        @Override
+                        public void onError(int executionError) {
+                            alertUser("Unable to COPTER_AUTO");
+                            setadd("Unable to COPTER_AUTO");
+                        }
+
+                        @Override
+                        public void onTimeout() {
+                            alertUser("Unable to COPTER_AUTO");
+                            setadd("Unable to COPTER_AUTO");
+                        }
+                    });
+                    //MissionApi.getApi(this.drone).setMission(mission, true);
+                    button8.setText("미션 중지");
+
                 }else{ // 미션 중지
                     VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_LOITER, new SimpleCommandListener() {
                         @Override
@@ -1716,9 +1790,8 @@ double maxx = 0;
                     });
                     setadd("mission stop");
                     //미션 중지
+                    button8.setText("미션 재시작");
                 }
-
-
 
 
                 break;
@@ -1754,16 +1827,20 @@ double maxx = 0;
         polygon = new PolygonOverlay();
         polygon.setColor(Color.argb(30,0,0,0));
         polyline = new PolylineOverlay();
+
+        polyline.setColor(Color.YELLOW);
+        polyline2= new PolylineOverlay();
+        polyline2.setColor(-65536);
         CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(new LatLng(35.945021, 126.682829), 15);
 
         premarker = new Marker();
-        premarker.setAnchor(new PointF(1, 1));
-
+        premarker.setAnchor(new PointF(0.5F, 0.5F));
+       // premarker.setAnchor(new PointF(0.5F, 0.9F));
         premarker.setWidth(110);
         premarker.setHeight(110);
 
         premarker.setPosition(new LatLng(35.945021, 126.682829));
-         premarker.setIcon(OverlayImage.fromResource(R.drawable.pix6));
+         premarker.setIcon(OverlayImage.fromResource(R.drawable.pix15));
         premarker.setMap(naverMap);
 
 
@@ -1833,122 +1910,123 @@ double maxx = 0;
         naverMap.addOnCameraIdleListener(new NaverMap.OnCameraIdleListener() {
             @Override
             public void onCameraIdle() {
-                //    Log.d("aabb",position.target.latitude + " " + position.target.longitude);
-                CameraPosition position = naverMapall.getCameraPosition();
-                Log.d("aabbcc",position.target.latitude + " " + position.target.longitude);
-                if(overboo){
-                    Log.d("ddeeff","overboo들어옴");
+                if (dronemode == 3) {
+                    //    Log.d("aabb",position.target.latitude + " " + position.target.longitude);
+                    CameraPosition position = naverMapall.getCameraPosition();
+                    Log.d("aabbcc", position.target.latitude + " " + position.target.longitude);
+                    if (overboo) {
+                        Log.d("ddeeff", "overboo들어옴");
 
 
-                    for(int i = 0 ; i < markerarrmin.size(); i++){
-                        Marker a = (Marker) markerarrmin.get(i);
-                        a.setMap(null);
+                        for (int i = 0; i < markerarrmin.size(); i++) {
+                            Marker a = (Marker) markerarrmin.get(i);
+                            a.setMap(null);
 
-                    }
-                    markerarrmin.clear();
-arr2.clear();
-                    Marker ma2 = new Marker();
-                    ma2.setTag(overid);
-                    ma2.setPosition(new LatLng(position.target.latitude, position.target.longitude));
-                    ma2.setMap(naverMapall);
-                    ma2.setOnClickListener(new Overlay.OnClickListener() {
-                        @Override
-                        public boolean onClick(@NonNull Overlay o) {
-                            centermarker.setVisibility(View.VISIBLE);
-                            //Toast.makeText(context, o+"오버레이 클릭됨", Toast.LENGTH_SHORT).show();
-                            Log.d("ddeeff",o.getTag()+ "오버레이 클릭됨 두번째");
-                            o.setMap(null);
-                            overid = o.getTag()+"";
-                            overboo = true;
-                            return true;
                         }
-                    });
+                        markerarrmin.clear();
+                        arr2.clear();
+                        Marker ma2 = new Marker();
+                        ma2.setTag(overid);
+                        ma2.setWidth(markersize);
+                        ma2.setHeight(markersize);
+                        ma2.setPosition(new LatLng(position.target.latitude, position.target.longitude));
+                        ma2.setMap(naverMapall);
+                        ma2.setOnClickListener(new Overlay.OnClickListener() {
+                            @Override
+                            public boolean onClick(@NonNull Overlay o) {
+                                centermarker.setVisibility(View.VISIBLE);
+                                //Toast.makeText(context, o+"오버레이 클릭됨", Toast.LENGTH_SHORT).show();
+                                Log.d("ddeeff", o.getTag() + "오버레이 클릭됨 두번째");
+                                o.setMap(null);
+                                overid = o.getTag() + "";
+                                overboo = true;
+                                return true;
+                            }
+                        });
 
 
+                        int a = Integer.parseInt(overid);
+                        markerarr.set(a, ma2);
+                        polinearr.set(a, new LatLong(position.target.latitude, position.target.longitude));
+                        polgonarr.set(a, new LatLng(position.target.latitude, position.target.longitude));
 
 
-                    int a = Integer.parseInt(overid);
-                    markerarr.set(a,ma2);
-                    polinearr.set(a,new LatLong(position.target.latitude,position.target.longitude));
-                    polgonarr.set(a,new LatLng(position.target.latitude,position.target.longitude));
+                        maxx = 0;
+                        for (int i = 0; i < polgonarr.size() - 1; i++) {
 
+                            LatLng lat111 = polgonarr.get(i);
+                            LatLng lat222 = polgonarr.get(i + 1);
 
-                    maxx=0;
-                    for(int i = 0 ; i < polgonarr.size()-1; i++){
+                            double bear = bearing(lat111.latitude, lat111.longitude, lat222.latitude, lat222.longitude);
+                            double distance2 = distance(lat111.latitude, lat111.longitude, lat222.latitude, lat222.longitude, "meter");
 
-                        LatLng lat111 = polgonarr.get(i);
-                        LatLng lat222 = polgonarr.get(i+1);
+                            if (maxx <= distance2) {
+                                maxx = distance2;
+                                angle = bear;
+                            }
 
-                        double bear = bearing(lat111.latitude,lat111.longitude,lat222.latitude,lat222.longitude);
-                        double distance2 = distance(lat111.latitude,lat111.longitude,lat222.latitude,lat222.longitude,"meter");
+                        }
 
-                        if(maxx <= distance2){
+                        LatLng lat11 = polgonarr.get(0);
+                        LatLng lat22 = polgonarr.get(polgonarr.size() - 1);
+
+                        double bear = bearing(lat11.latitude, lat11.longitude, lat22.latitude, lat22.longitude);
+                        double distance2 = distance(lat11.latitude, lat11.longitude, lat22.latitude, lat22.longitude, "meter");
+
+                        if (maxx <= distance2) {
                             maxx = distance2;
-                            angle =bear;
+                            angle = bear;
                         }
 
+                        Log.d("qqwwee", angle + "");
+
+
+                        Polygon polygon2 = new Polygon();
+                        polygon2.addPoints(polinearr);
+                        grid = null;
+                        GridBuilder gridBuilder = new GridBuilder(polygon2, angle, distance, new LatLong(0, 0));
+                        try {
+                            polygon2.checkIfValid();
+                            grid = gridBuilder.generate(tempsort);
+                            //grid.gridPoints.get()
+
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Log.d("qqwwee", e.getMessage());
+                        }
+
+                        for (k = 0; k < grid.gridPoints.size(); k++) {
+                            LatLong lat = grid.gridPoints.get(k);
+
+                            LatLng lat2 = new LatLng(lat.getLatitude(), lat.getLongitude());
+
+                            arr2.add(lat2);
+
+                            Marker m = new Marker();
+                            m.setPosition(lat2);
+                            m.setWidth(10);
+                            m.setHeight(10);
+                            m.setCaptionText(k + "");
+                            m.setCaptionTextSize(8);
+                            m.setMap(naverMapall);
+                            markerarrmin.add(m);
+                        }
+                        k = 0;
+
+                        polyline.setCoords(arr2);
+                        polyline.setMap(naverMapall);
+                        polygon.setCoords(polgonarr);
+                        polygon.setMap(naverMapall);
+
+                        overboo = false;
+
+                        centermarker.setVisibility(View.GONE);
+
                     }
-
-                    LatLng lat11 = polgonarr.get(0);
-                    LatLng lat22 = polgonarr.get(polgonarr.size()-1);
-
-                    double bear = bearing(lat11.latitude,lat11.longitude,lat22.latitude,lat22.longitude);
-                    double distance2 = distance(lat11.latitude,lat11.longitude,lat22.latitude,lat22.longitude,"meter");
-
-                    if(maxx <= distance2){
-                        maxx = distance2;
-                        angle =bear;
-                    }
-
-                    Log.d("qqwwee",angle+"");
-
-
-                    Polygon polygon2 = new Polygon();
-                    polygon2.addPoints(polinearr);
-                    grid = null;
-                    GridBuilder gridBuilder = new GridBuilder(polygon2, angle,distance, new LatLong(0, 0));
-                    try {
-                        polygon2.checkIfValid();
-                        grid = gridBuilder.generate(tempsort);
-                        //grid.gridPoints.get()
-
-
-
-                    }catch (Exception e){
-                        e.printStackTrace();
-                        Log.d("qqwwee",e.getMessage());
-                    }
-
-                    for( k = 0; k < grid.gridPoints.size(); k++){
-                        LatLong lat = grid.gridPoints.get(k);
-
-                        LatLng lat2 = new LatLng(lat.getLatitude(),lat.getLongitude());
-
-                        arr2.add(lat2);
-
-                        Marker m = new Marker();
-                        m.setPosition(lat2);
-                        m.setWidth(10);
-                        m.setHeight(10);
-                        m.setCaptionText(k+"");
-                         m.setCaptionTextSize(8);
-                        m.setMap(naverMapall);
-                        markerarrmin.add(m);
-                    }
-                    k=0;
-
-                    polyline.setCoords(arr2);
-                    polyline.setMap(naverMapall);
-                    polygon.setCoords(polgonarr);
-                    polygon.setMap(naverMapall);
-
-                overboo = false;
-
-                    centermarker.setVisibility(View.GONE);
-
+                    //    cameraIdle.setText(CameraEventActivity.this.getString(R.string.format_camera_position,
+                    //          position.target.latitude, position.target.longitude, position.zoom, position.tilt, position.bearing));
                 }
-                //    cameraIdle.setText(CameraEventActivity.this.getString(R.string.format_camera_position,
-                //          position.target.latitude, position.target.longitude, position.zoom, position.tilt, position.bearing));
             }
         });
 
