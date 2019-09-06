@@ -1,12 +1,16 @@
 package com.example.mygcs;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.drawable.ColorDrawable;
+import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.DrawableRes;
@@ -25,6 +29,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
@@ -35,15 +40,18 @@ import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.CameraAnimation;
 import com.naver.maps.map.CameraPosition;
 import com.naver.maps.map.CameraUpdate;
+import com.naver.maps.map.LocationTrackingMode;
 import com.naver.maps.map.MapFragment;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.overlay.InfoWindow;
+import com.naver.maps.map.overlay.LocationOverlay;
 import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.Overlay;
 import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.overlay.PolygonOverlay;
 import com.naver.maps.map.overlay.PolylineOverlay;
+import com.naver.maps.map.util.FusedLocationSource;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.apis.ControlApi;
@@ -109,6 +117,10 @@ public class MapFragmentActivity extends FragmentActivity
         implements OnMapReadyCallback, Button.OnClickListener, NaverMap.OnMapLongClickListener, CompoundButton.OnCheckedChangeListener, DroneListener, TowerListener, LinkListener ,NaverMap.OnMapClickListener{
 
     private static final String TAG = MainActivity.class.getSimpleName();
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
+    private FusedLocationSource locationSource;
+
+  //   boolean isPermission = false;
     NaverMap naverMapall;
     PolylineOverlay polyline2;
     PolylineOverlay polyline;
@@ -169,7 +181,13 @@ double maxx = 0;
 
     int droneType = Type.TYPE_UNKNOWN;
 
+    LocationOverlay locationOverlay;
+    GpsInfo gps;
 
+    EditText editText;
+    EditText editText2;
+    EditText editText3;
+    EditText editText4;
 
     Spinner modeSelector;
     Button clear;
@@ -185,6 +203,9 @@ double maxx = 0;
     Button button14;
     Button button15;
     Button button16;
+    Button home;
+    Button location;
+
 
     Button button7;
     Button button2;
@@ -222,7 +243,8 @@ double maxx = 0;
         centermarker = (ImageView)findViewById(R.id.centermarker);
 
 
-
+        locationSource =
+                new FusedLocationSource(this, LOCATION_PERMISSION_REQUEST_CODE);
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
         ma = new Marker();
        // final Context context = getApplicationContext();
@@ -272,6 +294,14 @@ double maxx = 0;
         button14 = (Button)findViewById(R.id.button14);
         button15 = (Button)findViewById(R.id.button15);
         button16 = (Button)findViewById(R.id.button16);
+        editText = (EditText)findViewById(R.id.editText);
+        editText2 = (EditText)findViewById(R.id.editText2);
+        editText3 = (EditText)findViewById(R.id.editText3);
+        editText4 = (EditText)findViewById(R.id.editText4);
+
+        home = (Button)findViewById(R.id.home);
+        location = (Button)findViewById(R.id.location);
+
 
         button2 = (Button)findViewById(R.id.button2);
         button3 = (Button)findViewById(R.id.button3);
@@ -302,6 +332,8 @@ double maxx = 0;
         button7.setOnClickListener(this);
         button8.setOnClickListener(this);
 
+        home.setOnClickListener(this);
+        location.setOnClickListener(this);
 
         button2.setOnClickListener(this);
         button3.setOnClickListener(this);
@@ -1078,6 +1110,13 @@ double maxx = 0;
                 ma4.setPosition(new LatLng(latLng4.latitude, latLng4.longitude));
                 ma4.setMap(naverMapall);
                 markerarr.add(ma4);
+
+                String st = editText.getText()+"";
+                String st2 = editText2.getText()+"";
+
+                distancetemp = Integer.parseInt(st);
+                distancetemp2 = Integer.parseInt(st2);
+
                 for(int i = distancetemp2; i < distancetemp; i = i + distancetemp2) {
 
                     LatLng latLng10 =  computeOffset(Alat,i,angletemp);  // A 기준
@@ -1270,6 +1309,12 @@ double maxx = 0;
 
                     Polygon polygon2 = new Polygon();
                     polygon2.addPoints(polinearr);
+
+                    String st = editText3.getText()+"";
+                    String st2 = editText4.getText()+"";
+
+                    distance = Integer.parseInt(st);
+                    angle = Integer.parseInt(st2);
 
                     grid = null;
                     GridBuilder gridBuilder = new GridBuilder(polygon2, angle, distance, new LatLong(0, 0));
@@ -1519,6 +1564,7 @@ double maxx = 0;
 
     }
 
+
     @Override
     public void onClick(View view)
     {
@@ -1682,6 +1728,10 @@ double maxx = 0;
                 button15.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background));
                 button16.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background));
                 button8.setVisibility(View.GONE);
+                editText.setVisibility(View.GONE);
+                editText2.setVisibility(View.GONE);
+                editText3.setVisibility(View.GONE);
+                editText4.setVisibility(View.GONE);
 
                 break;
 
@@ -1692,7 +1742,10 @@ double maxx = 0;
                 button15.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background2));
                 button16.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background));
                 button8.setVisibility(View.VISIBLE);
-
+                editText.setVisibility(View.VISIBLE);
+                editText2.setVisibility(View.VISIBLE);
+                editText3.setVisibility(View.GONE);
+                editText4.setVisibility(View.GONE);
 
 
                 break;
@@ -1704,7 +1757,10 @@ double maxx = 0;
                 button15.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background));
                 button16.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background2));
                 button8.setVisibility(View.VISIBLE);
-
+                editText.setVisibility(View.GONE);
+                editText2.setVisibility(View.GONE);
+                editText3.setVisibility(View.VISIBLE);
+                editText4.setVisibility(View.VISIBLE);
 
 
                 break;
@@ -1796,7 +1852,65 @@ double maxx = 0;
 
                 break;
 
+            case R.id.home:
 
+                //locationOverlay.setPosition(new LatLng(35.967652, 126.736895));
+
+                LatLng templat = naverMapall.getLocationOverlay().getPosition();
+                LatLong lata = new LatLong(templat.latitude,templat.longitude);
+
+                VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_GUIDED, new SimpleCommandListener() {
+                    @Override
+                    public void onError(int executionError) {
+                        alertUser("Unable to Guided");
+                        setadd("Unable to Guided");
+                    }
+
+                    @Override
+                    public void onTimeout() {
+                        alertUser("Unable to Guided");
+                        setadd("Unable to Guided");
+                    }
+                });
+
+
+                ControlApi.getApi(drone).goTo(lata, true, new AbstractCommandListener() {
+
+                    @Override
+                    public void onSuccess() {
+                        alertUser("goto success");
+                        setadd("goto success");
+                    }
+
+                    @Override
+                    public void onError(int i) {
+                        alertUser("goto error");
+                        setadd("goto error");
+                    }
+
+                    @Override
+                    public void onTimeout() {
+                        alertUser("goto timeout");
+                        setadd("goto timeout");
+                    }
+
+                });
+
+
+
+
+
+
+
+                break;
+
+            case R.id.location:
+             //   locationSource = new FusedLocationSource(this, LOCATION_PERMISSION_REQUEST_CODE);
+
+
+
+
+                break;
 
        /*     case R.id.connect:
 
@@ -1811,6 +1925,18 @@ double maxx = 0;
         } // switch
 
     }   // onclick
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,  @NonNull int[] grantResults) {
+        if (locationSource.onRequestPermissionsResult(
+                requestCode, permissions, grantResults)) {
+            return;
+        }
+        super.onRequestPermissionsResult(
+                requestCode, permissions, grantResults);
+    }
+
 
 
     @UiThread
@@ -1843,6 +1969,29 @@ double maxx = 0;
          premarker.setIcon(OverlayImage.fromResource(R.drawable.pix15));
         premarker.setMap(naverMap);
 
+        locationOverlay = naverMap.getLocationOverlay();
+        locationOverlay.setPosition(new LatLng(35.945021, 126.682829));
+        locationOverlay.setVisible(true);
+
+        naverMap.setLocationSource(locationSource);
+        naverMap.setLocationTrackingMode(LocationTrackingMode.NoFollow);
+
+
+      /*  naverMap.addOnLocationChangeListener(new NaverMap.OnLocationChangeListener() {
+            @Override
+            public void onLocationChange(@NonNull Location location) {
+                locationOverlay.setPosition(new LatLng(location.getLongitude(), location.getLatitude()));
+                Toast.makeText(MapFragmentActivity.this,
+                        location.getLatitude() + ", " + location.getLongitude(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });*/
+
+      /*  Marker a = new Marker();
+        a.setPosition(new LatLng(35.942588479309215,126.68331203901326));
+        a.setMap(naverMapall);*/
+
+        //locationOverlay.setVisible(true);
 
         /*Marker marker = new Marker();
         marker.setPosition(new LatLng(35.945021, 126.682829));
@@ -2030,7 +2179,7 @@ double maxx = 0;
             }
         });
 
-
+     //   callPermission();
 
         //스피너추가
 
