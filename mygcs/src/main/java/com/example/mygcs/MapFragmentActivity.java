@@ -1700,6 +1700,9 @@ double maxx = 0;
                 onmap = false;
                 arr2.clear();
 
+                mission = this.drone.getAttribute(AttributeType.MISSION);
+                mission.clear();
+
                 polygon.setMap(null);
                 polyline.setMap(null);
                 polgonarr.clear();
@@ -1741,12 +1744,14 @@ double maxx = 0;
                 button14.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background));
                 button15.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background2));
                 button16.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background));
+                button8.setText("미션 전달");
                 button8.setVisibility(View.VISIBLE);
                 editText.setVisibility(View.VISIBLE);
                 editText2.setVisibility(View.VISIBLE);
                 editText3.setVisibility(View.GONE);
                 editText4.setVisibility(View.GONE);
-
+                mission = this.drone.getAttribute(AttributeType.MISSION);
+                mission.clear();
 
                 break;
 
@@ -1756,11 +1761,14 @@ double maxx = 0;
                 button14.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background));
                 button15.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background));
                 button16.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background2));
+                button8.setText("미션 전달");
                 button8.setVisibility(View.VISIBLE);
                 editText.setVisibility(View.GONE);
                 editText2.setVisibility(View.GONE);
                 editText3.setVisibility(View.VISIBLE);
                 editText4.setVisibility(View.VISIBLE);
+                mission = this.drone.getAttribute(AttributeType.MISSION);
+                mission.clear();
 
 
                 break;
@@ -1798,6 +1806,7 @@ double maxx = 0;
                     MissionApi.getApi(this.drone).setMission(mission, true);
 
                 }else if(missionstate.equals("미션 수행")) {
+
                     VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_AUTO, new SimpleCommandListener() {
                         @Override
                         public void onError(int executionError) {
@@ -1811,6 +1820,7 @@ double maxx = 0;
                             setadd("Unable to COPTER_AUTO");
                         }
                     });
+
                 //    MissionApi.getApi(this.drone).setMission(mission, true);
                     button8.setText("미션 중지");
                 }else if(missionstate.equals("미션 재시작")) {
