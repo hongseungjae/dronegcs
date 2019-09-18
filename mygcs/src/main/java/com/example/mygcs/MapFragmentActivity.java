@@ -111,6 +111,8 @@ public class MapFragmentActivity extends FragmentActivity
     List<LatLong> polinearr = new ArrayList();
     Mission mission;
     mapsetting ms;
+    guidemode guidemode;
+    uimanage uimanage;
 
     boolean mapgps;
     int dronemode = 1; // 일반모드 , 면적모드 , 간격모드
@@ -178,6 +180,7 @@ public class MapFragmentActivity extends FragmentActivity
     Button button3;
     Button clear2;
     int takeoffalt;
+    AlertDialog.Builder builder;
 
     Marker ma;
     private Drone drone;
@@ -195,6 +198,7 @@ public class MapFragmentActivity extends FragmentActivity
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
 
+
         setContentView(R.layout.activity_main);
         recyclerView = (RecyclerView) findViewById(R.id.recycler);
         centermarker = (ImageView)findViewById(R.id.centermarker);
@@ -203,9 +207,9 @@ public class MapFragmentActivity extends FragmentActivity
 
 
 
-        locationSource =
-                new FusedLocationSource(this, LOCATION_PERMISSION_REQUEST_CODE);
+        locationSource = new FusedLocationSource(this, LOCATION_PERMISSION_REQUEST_CODE);
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+
         ma = new Marker();
         context = getApplicationContext();
         this.controlTower = new ControlTower(context);
@@ -761,8 +765,6 @@ public class MapFragmentActivity extends FragmentActivity
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
         // 체크박스를 클릭해서 상태가 바꾸었을 경우 호출되는 콜백 메서드
 
-        String result = ""; // 문자열 초기화는 빈문자열로 하자
-
 
         if(cb1.isChecked()){
             naverMapall.setLayerGroupEnabled(NaverMap.LAYER_GROUP_BICYCLE, true);
@@ -798,63 +800,91 @@ public class MapFragmentActivity extends FragmentActivity
 
 
 
+    void areaexec(LatLng latLng3){ //면적모드 실행
+        if(!onmap){ // A 포인트 찍기 전
+            if(areamode==null) { // 면적모드 객체 생성 X
+                areamode = new areamode(polgonarr, markerarr, polyline, polygon, naverMapall);
+                areamode.Aset(latLng3); // A 포인트 찍기
+            }else{ // 면적모드 객체 생성 O
+                areamode.Aset(latLng3);
+            }
+            onmap = true;
+        }else{ // B 포인트 찍기
+            String alldistance = editText.getText()+"";
+            String distance = editText2.getText()+"";
+            areamode.Bset(latLng3,alldistance,distance);
+        }
+    }
+
+    void intervalexec( LatLng latLng3, LatLong latLng33){ //간격모드 실행
+        if (intervalmode == null) {  // 간격모드 객체 생성 X
+            intervalmode = new intervalmode(polinearr, polgonarr, markerarr, polyline, polygon, arr2, markerarrmin, naverMapall);
+            intervalmode.three_down_set(latLng3, latLng33); // 마커찍기
+        } else { // 간격모드 객체 생성 O
+            intervalmode.three_down_set(latLng3, latLng33); // 마커찍기
+        }
+        if(markercount >= 3) { // 마커가 3개 이상일 경우
+            String distance = editText3.getText() + "";
+            String angle = editText4.getText() + "";
+            intervalmode.three_up_set(distance, angle);
+        }
+    }
+
     @Override
-    public void onMapClick(@NonNull PointF pointF, @NonNull LatLng latLng) {
+    public void onMapClick(@NonNull PointF pointF, @NonNull LatLng latLng) { // 맵 클릭 이벤트
         PointF screenPt = naverMapall.getProjection().toScreenLocation(latLng);
         LatLng latLng3 = naverMapall.getProjection().fromScreenLocation(screenPt);
         LatLong latLng33 = new LatLong(latLng3.latitude,latLng3.longitude);
 
-
-        LatLng naverlat = latLng3;
-
         if(dronemode == 2) { // 면적모드
-
-            if(!onmap){ // A 포인트 찍기 전
-
-                if(areamode==null) { // 면적모드 객체 생성 X
-                    areamode = new areamode(polgonarr, markerarr, polyline, polygon, naverMapall);
-                    areamode.Aset(latLng3); // A 포인트 찍기
-                }else{ // 면적모드 객체 생성 O
-                    areamode.Aset(latLng3);
-                }
-                onmap = true;
-
-            }else{ // B 포인트 찍기
-
-                String alldistance = editText.getText()+"";
-                String distance = editText2.getText()+"";
-                areamode.Bset(latLng3,alldistance,distance);
-
-                }
+            areaexec(latLng3);
         }
-
         if(dronemode == 3) { //간격모드
+            intervalexec(latLng3,latLng33);
+         }
+    }
 
 
-                if (intervalmode == null) {  // 간격모드 객체 생성 X
-                    intervalmode = new intervalmode(polinearr, polgonarr, markerarr, polyline, polygon, arr2, markerarrmin, naverMapall);
-                    intervalmode.three_down_set(latLng3, latLng33); // 마커찍기
-                } else { // 간격모드 객체 생성 O
-                    intervalmode.three_down_set(latLng3, latLng33); // 마커찍기
-                }
+    void guideselect(){ // 가이드 모드 예, 아니오 선택
 
-                if(markercount >= 3) { // 마커가 3개 이상일 경우
-                    String distance = editText3.getText() + "";
-                    String angle = editText4.getText() + "";
-                    intervalmode.three_up_set(distance, angle);
-                }
-            } // else문
-        }  // 간격모드
+        builder.setPositiveButton("예",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        Toast.makeText(getApplicationContext(), "예를 선택했습니다.", Toast.LENGTH_LONG).show();
+
+                        setadd(guidemode.guidechange()); // 가이드 모드로 전환
+                        setadd(guidemode.guideexec(latt2,latl2)); // 가이드 모드 실행
+
+
+                    }
+                });
+
+        builder.setNegativeButton("아니오",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        Toast.makeText(getApplicationContext(), "아니오를 선택했습니다.", Toast.LENGTH_LONG).show();
+                    }
+                });
+
+        builder.show();
+
+    }
 
 
     @Override
     public void onMapLongClick(@NonNull PointF pointF, @NonNull LatLng latLng) {
 
         PointF screenPt = naverMapall.getProjection().toScreenLocation(latLng);
-         latt2 = naverMapall.getProjection().fromScreenLocation(screenPt);
+          latt2 = naverMapall.getProjection().fromScreenLocation(screenPt);
          latl2 = new LatLong(latt2.latitude,latt2.longitude);
 
          if(dronemode == 1) {    //일반모드일떄
+             if(guidemode == null){
+                 guidemode = new guidemode(ma,naverMapall,drone);
+                 builder = new AlertDialog.Builder(this);
+                 builder.setTitle("가이드 모드");
+                 builder.setMessage("진행하시겠습니까?");
+             }
 
              State vehicleState = this.drone.getAttribute(AttributeType.STATE);
              VehicleMode vehicleMode = vehicleState.getVehicleMode();
@@ -862,93 +892,11 @@ public class MapFragmentActivity extends FragmentActivity
 
              if (temp.equals("Guided")) { // 가이드모드
 
-
-                 ma.setPosition(latt2);
-                 ma.setMap(naverMapall);
-
-                 ControlApi.getApi(drone).goTo(latl2, true, new AbstractCommandListener() {
-
-                     @Override
-                     public void onSuccess() {
-                         alertUser("goto success");
-                         setadd("goto success");
-                     }
-
-                     @Override
-                     public void onError(int i) {
-                         alertUser("goto error");
-                         setadd("goto error");
-                     }
-
-                     @Override
-                     public void onTimeout() {
-                         alertUser("goto timeout");
-                         setadd("goto timeout");
-                     }
-                 });
+                 setadd(guidemode.guideexec(latt2,latl2)); // 가이드 모드 실행
 
              } else { //가이드모드 X
 
-
-                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                 builder.setTitle("가이드 모드");
-                 builder.setMessage("진행하시겠습니까?");
-                 builder.setPositiveButton("예",
-                         new DialogInterface.OnClickListener() {
-                             public void onClick(DialogInterface dialog, int which) {
-                                 Toast.makeText(getApplicationContext(), "예를 선택했습니다.", Toast.LENGTH_LONG).show();
-
-                                 VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_GUIDED, new SimpleCommandListener() {
-                                     @Override
-                                     public void onError(int executionError) {
-                                         alertUser("Unable to Guided");
-                                         setadd("Unable to Guided");
-                                     }
-
-                                     @Override
-                                     public void onTimeout() {
-                                         alertUser("Unable to Guided");
-                                         setadd("Unable to Guided");
-                                     }
-                                 });
-
-
-                                 ma.setPosition(latt2);
-                                 ma.setMap(naverMapall);
-
-                                 ControlApi.getApi(drone).goTo(latl2, true, new AbstractCommandListener() {
-
-
-                                     @Override
-                                     public void onSuccess() {
-                                         alertUser("goto success");
-                                         setadd("goto success");
-                                     }
-
-                                     @Override
-                                     public void onError(int i) {
-                                         alertUser("goto error");
-                                         setadd("goto error");
-                                     }
-
-                                     @Override
-                                     public void onTimeout() {
-                                         alertUser("goto timeout");
-                                         setadd("goto timeout");
-                                     }
-                                 });
-
-
-                             }
-                         });
-                 builder.setNegativeButton("아니오",
-                         new DialogInterface.OnClickListener() {
-                             public void onClick(DialogInterface dialog, int which) {
-                                 Toast.makeText(getApplicationContext(), "아니오를 선택했습니다.", Toast.LENGTH_LONG).show();
-                             }
-                         });
-                 builder.show();
-
+                 guideselect(); // 예 아니오 선택
 
              }
 
@@ -1002,87 +950,60 @@ public class MapFragmentActivity extends FragmentActivity
                 break;
 
             case R.id.btnmapgps:
-                if(mapgps){
 
+                if(mapgps){
                     mapgps = false;
                     btnmapgps.setText("맵 활성화");
                     alertUser("맵 활성화");
-                }else{
-                    mapgps =true;
+                }else {
+                    mapgps = true;
                     alertUser("맵 비활성화");
                     btnmapgps.setText("맵 비활성화");
                 }
+
                 break;
 
             case R.id.clear:
-
                 latlngarr.clear();
-
-
                 break;
 
             case R.id.button7:
-
-                if(linear3.getVisibility() == View.VISIBLE){
-                    linear3.setVisibility(View.GONE);
-                }else{
-                    linear3.setVisibility(View.VISIBLE);
-                }
-
+                uimanage.mapselect();
                 break;
 
-            case R.id.button11:
-
-                button11.setBackgroundResource(R.color.orange);
-                button12.setBackgroundResource(R.color.black);
-                button13.setBackgroundResource(R.color.black);
-                button7.setText("위성지도");
-                naverMapall.setMapType(NaverMap.MapType.Satellite);
-                linear3.setVisibility(View.GONE);
-
+            case R.id.button11: // 위성지도
+                uimanage.satellite();
                 break;
 
-            case R.id.button12:
-
-                button11.setBackgroundResource(R.color.black);
-                button12.setBackgroundResource(R.color.orange);
-                button13.setBackgroundResource(R.color.black);
-                button7.setText("지형도");
-                naverMapall.setMapType(NaverMap.MapType.Terrain);
-                linear3.setVisibility(View.GONE);
-
-
+            case R.id.button12: // 지형도
+                uimanage.terrain();
                 break;
 
-            case R.id.button13:
-
-                button11.setBackgroundResource(R.color.black);
-                button12.setBackgroundResource(R.color.black);
-                button13.setBackgroundResource(R.color.orange);
-                button7.setText("일반지도");
-                naverMapall.setMapType(NaverMap.MapType.Basic);
-                linear3.setVisibility(View.GONE);
-
+            case R.id.button13: // 일반지도
+                uimanage.basic();
                 break;
-
-
 
             case R.id.button2: //이륙고도 up
-
                 takeoffalt = takeoffalt + 1;
                 textView2.setText("이륙고도 : "+takeoffalt + " m");
-
                 break;
-
 
             case R.id.button3:  //이륙고도 down
                 takeoffalt = takeoffalt - 1;
                 textView2.setText("이륙고도 : "+takeoffalt + " m");
-
-
                 break;
 
+            case R.id.button14:  // 일반모드
+                uimanage.normal();
+                break;
 
+            case R.id.button15: // 면적모드
+                uimanage.area();
+                break;
+
+            case R.id.button16: // 간격모드
+                uimanage.interval();
+                break;
             case R.id.clear2:  // 면적 간격 clear
                 onmap = false;
                 arr2.clear();
@@ -1107,60 +1028,6 @@ public class MapFragmentActivity extends FragmentActivity
                     a.setMap(null);
 
                 }
-
-
-                break;
-
-            case R.id.button14:  // 일반모드
-                dronemode = 1;
-                onmap = false;
-                button14.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background2));
-                button15.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background));
-                button16.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background));
-                button8.setVisibility(View.GONE);
-                editText.setVisibility(View.GONE);
-                editText2.setVisibility(View.GONE);
-                editText3.setVisibility(View.GONE);
-                editText4.setVisibility(View.GONE);
-                button8.setText("미션 전달");
-                mission = this.drone.getAttribute(AttributeType.MISSION);
-                mission.clear();
-
-                break;
-
-            case R.id.button15: // 면적모드
-                dronemode = 2;
-                onmap = false;
-                button14.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background));
-                button15.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background2));
-                button16.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background));
-                button8.setText("미션 전달");
-                button8.setVisibility(View.VISIBLE);
-                editText.setVisibility(View.VISIBLE);
-                editText2.setVisibility(View.VISIBLE);
-                editText3.setVisibility(View.GONE);
-                editText4.setVisibility(View.GONE);
-                mission = this.drone.getAttribute(AttributeType.MISSION);
-                mission.clear();
-
-                break;
-
-            case R.id.button16: // 간격모드
-                dronemode = 3;
-                onmap = false;
-                button14.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background));
-                button15.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background));
-                button16.setBackground(ContextCompat.getDrawable(this, R.drawable.button_background2));
-                button8.setText("미션 전달");
-                button8.setVisibility(View.VISIBLE);
-                editText.setVisibility(View.GONE);
-                editText2.setVisibility(View.GONE);
-                editText3.setVisibility(View.VISIBLE);
-                editText4.setVisibility(View.VISIBLE);
-                mission = this.drone.getAttribute(AttributeType.MISSION);
-                mission.clear();
-
-
                 break;
 
             case R.id.button8: // 미션 전달, 미션 수행, 미션 중지
@@ -1251,57 +1118,25 @@ public class MapFragmentActivity extends FragmentActivity
                     button8.setText("미션 재시작");
                 }
 
-
                 break;
 
             case R.id.home:
+                if(guidemode == null){
+                    guidemode = new guidemode(ma,naverMapall,drone);
+                    builder = new AlertDialog.Builder(this);
+                    builder.setTitle("가이드 모드");
+                    builder.setMessage("진행하시겠습니까?");
+                }
 
                 LatLng templat = naverMapall.getLocationOverlay().getPosition();
                 LatLong lata = new LatLong(templat.latitude,templat.longitude);
 
-                VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_GUIDED, new SimpleCommandListener() {
-                    @Override
-                    public void onError(int executionError) {
-                        alertUser("Unable to Guided");
-                        setadd("Unable to Guided");
-                    }
-
-                    @Override
-                    public void onTimeout() {
-                        alertUser("Unable to Guided");
-                        setadd("Unable to Guided");
-                    }
-                });
-
-                ControlApi.getApi(drone).goTo(lata, true, new AbstractCommandListener() {
-
-                    @Override
-                    public void onSuccess() {
-                        alertUser("goto success");
-                        setadd("goto success");
-                    }
-
-                    @Override
-                    public void onError(int i) {
-                        alertUser("goto error");
-                        setadd("goto error");
-                    }
-
-                    @Override
-                    public void onTimeout() {
-                        alertUser("goto timeout");
-                        setadd("goto timeout");
-                    }
-
-                });
+                setadd(guidemode.guidechange());
+                setadd(guidemode.Homeexec(lata));
 
                 break;
 
             case R.id.location:
-
-
-
-
                 break;
 
 
@@ -1320,37 +1155,34 @@ public class MapFragmentActivity extends FragmentActivity
                 requestCode, permissions, grantResults);
     }
 
+    void objectsetting(){ // 필요 객체 생성
+        polygon = new PolygonOverlay();
+        premarker = new Marker();
+        polyline = new PolylineOverlay();
+        polyline2= new PolylineOverlay();
+    }
 
+    void mapevent(){ // 맵 이벤트 셋팅
+        naverMapall.setLocationSource(locationSource);
+        naverMapall.setOnMapLongClickListener(this);
+        naverMapall.setOnMapClickListener(this);
+        naverMapall.setLocationTrackingMode(LocationTrackingMode.NoFollow);
+    }
 
     @UiThread
     @Override
     public void onMapReady(@NonNull NaverMap naverMap) {
 
-        CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(new LatLng(35.945021, 126.682829), 15);
 
-        polygon = new PolygonOverlay();
-        premarker = new Marker();
-        polyline = new PolylineOverlay();
-        polyline2= new PolylineOverlay();
+        objectsetting(); // 필요 객체 생성
+
+        uimanage = new uimanage(button11,button12,button13,button14,button15,button16,button7,button8,editText,editText2,  editText3,editText4, mission,  naverMapall, linear3,onmap,context,dronemode,drone);
+
         ms = new mapsetting(polyline2, polyline, polygon, locationOverlay, premarker, naverMap);
-        ms.settting();
-
-        naverMap.setLocationSource(locationSource);
-        naverMap.setLocationTrackingMode(LocationTrackingMode.NoFollow);
-        naverMap.setOnMapLongClickListener(this);
-        naverMap.setOnMapClickListener(this);
+        ms.settting(); // 맵세팅
 
         naverMapall = naverMap;
-
-        naverMap.moveCamera(cameraUpdate);
-
-        naverMap.addOnCameraChangeListener(new NaverMap.OnCameraChangeListener() {
-            @Override
-            public void onCameraChange(int reason, boolean animated) {
-                CameraPosition position = naverMapall.getCameraPosition();
-                Log.d("aabb",position.target.latitude + " " + position.target.longitude);
-            }
-        });
+        mapevent(); // 맵 이벤트 추가
 
         naverMap.addOnCameraIdleListener(new NaverMap.OnCameraIdleListener() {
             @Override
@@ -1361,8 +1193,6 @@ public class MapFragmentActivity extends FragmentActivity
 
             }
         });
-    } // onMapReady
-
-
+    }
 
 }

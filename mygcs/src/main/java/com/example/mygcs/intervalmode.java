@@ -1,6 +1,6 @@
 package com.example.mygcs;
 
-import android.graphics.Color;
+
 import android.support.annotation.NonNull;
 import android.view.View;
 
@@ -46,9 +46,6 @@ public class intervalmode {
 
     }
 
-
-
-
     void three_down_set(LatLng latLng3,LatLong latLng33){
 
         Marker ma2 = new Marker();
@@ -73,15 +70,10 @@ public class intervalmode {
             }
         });
 
-
         markercount++;
-
     }
 
-
     void three_up_set(String st,String st2){
-
-
 
             arr2.clear();
 
@@ -130,9 +122,6 @@ public class intervalmode {
                 m.setMap(naverMapall);
                 markerarrmin.add(m);
             }
-
-
-
 
             polyline.setCoords(arr2);
             polyline.setMap(naverMapall);

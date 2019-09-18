@@ -8,6 +8,8 @@ import android.view.View;
 
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.CameraPosition;
+import com.naver.maps.map.CameraUpdate;
+import com.naver.maps.map.LocationTrackingMode;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.overlay.LocationOverlay;
 import com.naver.maps.map.overlay.Marker;
@@ -21,7 +23,6 @@ import org.droidplanner.services.android.impl.core.polygon.Polygon;
 import org.droidplanner.services.android.impl.core.survey.grid.Grid;
 import org.droidplanner.services.android.impl.core.survey.grid.GridBuilder;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,6 +48,9 @@ public class mapsetting {
     }
 
     void settting(){
+
+        CameraUpdate cameraUpdate = CameraUpdate.scrollAndZoomTo(new LatLng(35.945021, 126.682829), 15);
+        naverMapall.moveCamera(cameraUpdate);
 
         locationOverlay = naverMapall.getLocationOverlay();
 
